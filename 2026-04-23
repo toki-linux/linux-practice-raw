@@ -1,0 +1,46 @@
+# CLI操作
+スクロールのかわりにlessを使え
+history/dmesg/cat/file
+設定をいじるならVMを一旦止めろ
+less の~は終端の合図　もう下に何もない
+
+lessの操作
+↑ ↓ 一行ずつ移動
+space 一ページ進む
+b 一ページ戻る
+q 終了
+
+ログの種類と場所
+1. /var/log/journal/  ubuntuだとここ　systemd-journaldが管理しているログ　jourbnalctl -u nginx で閲覧可能 nginxサービスがいつ起動していつ停止したかがわかる
+2. /var/log/nginx/access.log  cat /var/log/nginx/access.logで閲覧可能　いつ、誰が、どこで、何をしようとして、結果どうなったかが見える
+3. /var/log/nginx/error.log   cat /var/log/nginx/error.logで閲覧可能　 なぜ失敗したかが見える。原因まで特定できる
+
+
+
+ログ見る時に使えるコード集
+
+全体をざっとみる
+less /var/log/nginx/access.log
+
+リアルタイム監視
+tail -f /var/log/nginx/access.log
+
+エラーを探す
+grep error /var/log/nginx/access.log
+
+ステータスコードを見る(404)
+grep " 404 " /var/log/nginx/access.log
+
+IPごとにまとめる(攻撃検知の基礎)
+awk '{print $1}' /var/log/nginx/access.log | sort | uniq -c
+awkでIP見て、sortで並び替え、uniq -cで回数カウント＝何回同じIPで接続しようとしているかわかる
+多いやつ＝怪しい
+
+組み合わせ(これ使えると強い）
+grep " 404 " /var/log/nginx/access.log | awk '{print $1}' | sort | uniq -c
+404を出しているIPだけ集計
+
+
+CLI操作とログのみる場所に苦戦した。
+linuxではスクロールバーを使わずにコマンドを使用して履歴を見れるようにする
+ログの場所は/varにありがちなのでfindコマンドで検索してみるのもあり
