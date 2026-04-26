@@ -1,0 +1,28 @@
+# 403 Forbidden　(deny allによるアクセス拒否)
+
+## 概要
+nginxでアクセス拒否
+
+## 症状
+ブラウザでアクセスした時に４０３が出る
+
+## 原因
+nginx設定の「deny all;」により、すべてのアクセスが拒否されていた
+
+## 解決
+/etc/nginx/sites-enabled/default の設定ファイル内の「deny all;」をコメントアウトし、アクセスを許可した
+
+## 切り分け手順
+1. access.logを見て403を確認
+2. error.logを確認し「permission denied」などのエラー内容を特定
+3. ファイルの設定確認
+
+
+## 再現手順
+nginx設定ファイルに「deny all;」を追加し、nginxを再起動する
+
+## 学び
+access.logで現象（403）を確認し、error.logで原因（設定による拒否）を特定できる
+
+## 応用（任意）
+ほかの権限系エラーもログ確認で切り分け可能
