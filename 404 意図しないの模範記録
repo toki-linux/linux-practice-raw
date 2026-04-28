@@ -1,0 +1,105 @@
+# 404 Not Found（rootにファイルパスを指定してしまった）
+
+## 概要
+nginxの設定で `root` にディレクトリではなくファイルパスを指定したため、意図しない404エラーが発生した。
+
+## やりたかったこと
+`index.html` を別ディレクトリへ移動し、nginxの設定を変更することで404エラーを再現したかった。
+
+想定していた流れは以下。
+
+1. nginxの設定を変更する
+2. まず現在の状態で正常に表示されるか確認する
+3. 正常表示を確認する
+4. `index.html` を移動する
+5. 404エラーを確認する
+
+しかし、設定変更後の確認時点で意図せず404エラーが発生した。
+
+## 症状
+ブラウザで `http://localhost/` にアクセスすると、本来はページが表示される想定だったが、404 Not Found が表示された。
+
+`access.log` でも404が記録されていた。
+
+## 原因
+`/etc/nginx/sites-enabled/default` で、本来はディレクトリを指定する `root` に、ファイルパスまで指定していた。
+
+誤った設定：
+
+```nginx
+# root /var/www/html;
+root /var/www/html/index.html;
+index index.html index.htm index.nginx-debian.html;
+
+root はドキュメントルートとなる「ディレクトリ」を指定する設定であり、ファイルを直接指定するものではない。
+
+この設定では、nginxは /var/www/html/index.html をディレクトリとして扱い、さらに index index.html を結合して以下のパスを探しに行く。
+
+/var/www/html/index.html/index.html
+
+しかし、そのようなパスは存在しないため404エラーになった。
+
+解決
+
+root の指定を元に戻し、ディレクトリを指定する形に修正した。
+
+root /var/www/html;
+index index.html index.htm index.nginx-debian.html;
+
+設定変更後、nginxの設定を確認して再読み込みした。
+
+sudo nginx -t
+sudo systemctl reload nginx
+切り分け手順
+ブラウザで404エラーを確認
+access.log でステータスコード404を確認
+nginxの設定ファイルを確認
+root にファイルパスを指定していることに気づいた
+root はディレクトリを指定するものだと整理
+nginxが実際に探すパスを考え、存在しないパスを見に行っていると判断した
+再現手順
+
+/etc/nginx/sites-enabled/default の root に、ディレクトリではなくファイルパスを指定する。
+
+root /var/www/html/index.html;
+index index.html;
+
+その後、設定を反映する。
+
+sudo nginx -t
+sudo systemctl reload nginx
+
+ブラウザで以下にアクセスする。
+
+http://localhost/
+
+nginxは以下を探す。
+
+/var/www/html/index.html/index.html
+
+このパスが存在しないため、404 Not Found になる。
+
+学び
+
+root はファイルではなく、ドキュメントルートとなるディレクトリを指定する設定である。
+
+http://localhost/ にアクセスした場合、nginxは root で指定されたディレクトリに対して、index で指定されたファイル名を結合して表示するファイルを探す。
+
+今回のように root にファイルパスを指定すると、nginxはそのファイルパスをディレクトリとして扱ってしまう。その結果、存在しないパスを探しに行き、404エラーになる。
+
+403との違い
+
+404は、nginxが探したファイルやパスが存在しない場合に発生する。
+
+一方で、directory index is forbidden の403は、ディレクトリ自体は存在するが、表示すべき index.html がなく、ディレクトリ一覧表示も禁止されている場合に発生する。
+
+今回のエラーは、ディレクトリ一覧表示の問題ではなく、nginxが組み立てたパスが存在しなかったため404になった。
+
+応用
+
+nginxの設定を変更するときは、root と index の役割を分けて考える必要がある。
+
+root はディレクトリを指定する
+index は表示するファイル名を指定する
+
+この考え方を理解しておくことで、nginx設定変更時に「nginxが実際にどのパスを探しているのか」を考えながら切り分けできる。
