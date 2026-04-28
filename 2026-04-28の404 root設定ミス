@@ -1,0 +1,51 @@
+# 404 Not Found（root設定ミス）
+
+## 概要
+nginxのroot設定が実際のファイル配置と一致しておらず、存在するファイルを見つけられない問題
+
+## 症状
+ブラウザでアクセスすると404エラーが表示される
+
+## 原因
+index.html自体は存在していたが、nginxのroot設定が誤っていたため、nginxが別の場所を探していた
+
+例：
+実際のファイル配置：
+
+/var/www/html/index.html
+
+nginx設定：
+
+root /var/www/test;
+
+この場合、nginxは以下を探す：
+
+/var/www/test/index.html
+
+その場所にファイルがないため404となる
+
+## 解決
+nginx設定ファイルのrootを正しいパスに修正する
+
+## 切り分け手順
+1. access.logで404を確認
+2. URLで指定したパスを確認
+3. nginx設定ファイルのrootを確認
+4. 実際のファイル配置とroot設定を照合する
+
+## 再現手順
+nginx設定ファイルのrootを、実際のファイル配置と違う場所に変更する
+
+例：
+
+root /var/www/test;
+
+設定変更後にnginxを再読み込みする
+
+sudo systemctl reload nginx
+
+## 学び
+404はファイルが存在しない場合だけでなく、nginxが探している場所と実際の配置がズレている場合にも発生する
+
+## 応用
+404が出た場合は、ファイルの有無だけでなく、nginxのroot設定とURLの対応関係も確認する
