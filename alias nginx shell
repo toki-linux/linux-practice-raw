@@ -1,0 +1,127 @@
+シェルの alias と nginxの alias は名前が同じだけで中身は全く違う
+
+① シェルの alias
+alias rm='rm -i'
+👉 意味
+rm と打ったら rm -i を実行する
+👉 正体
+コマンドの「ショートカット」
+
+② nginxの alias（今回のやつ）
+location /images/ {
+    alias /var/www/img/;
+}
+👉 意味
+URLの一部を別のディレクトリに置き換える
+👉 正体
+URL → ファイルパス の変換ルール
+
+💡 比較すると一発
+種類	正体	何を変換してる？
+シェル alias	コマンドの別名	rm → rm -i
+nginx alias	パスの変換	/images/ → /var/www/img/
+③ nginx aliasの書式（ここが本題）
+基本👇
+location パス {
+    alias 実際のディレクトリ;
+}
+
+④ 具体例
+location /images/ {
+    alias /var/www/img/;
+}
+アクセス👇
+http://localhost/images/cat.png
+変換👇
+/images/ を消す
+↓
+残り → cat.png
+↓
+/var/www/img/ と合体
+↓
+/var/www/img/cat.png
+❌ よくあるミス（今回）
+alias /var/www/img;   ← スラッシュなし
+/var/www/imgcat.png ← こうなる
+👉 404
+
+🎯 覚え方
+シェルalias → コマンドのあだ名
+nginx alias → URLの道案内
+🔥 ここが一番重要
+
+君の理解を一段上げるポイント👇
+
+nginxは「URLをファイルパスに変換するソフト」
+
+aliasはその変換ルールの1つ
+
+
+
+
+
+## 変換のポイント
+/images/　が変換されるのは確定なの？　aliasが使われるときの合図は何？
+shellの場合はaliasコマンドだけどnginxの場合は何をあいずにaliasだと判断している？rootとどう分けている？
+
+結論
+nginxでは、これが合図。
+location /images/ {    alias /var/www/img/;}
+この中の
+alias
+というディレクティブ名を見て、nginxは「これはalias方式でURLをファイルパスに変換するんだ」と判断する。
+つまり、シェルみたいに alias コマンドを実行するんじゃなくて、設定ファイルを読み込んだnginxが、設定項目として alias を解釈する。
+
+/images/ が変換されるのは確定？
+この条件なら確定。
+location /images/ {    alias /var/www/img/;}
+そしてアクセスがこれなら、
+/images/test.html
+nginxはまず、
+/images/ に一致する location を選ぶ
+その location の中に、
+alias /var/www/img/;
+があるから、
+/images/ を /var/www/img/ に置き換える
+つまり、
+/images/test.html↓/var/www/img/test.html
+になる。
+
+nginxは何を合図にrootとaliasを分ける？
+設定ファイルの中に書いてある名前で分ける。
+rootなら
+location /images/ {    root /var/www;}
+nginxは root を見て、
+root方式でパスを作る
+と判断する。
+結果は、
+/images/test.html↓/var/www/images/test.html
+
+aliasなら
+location /images/ {    alias /var/www/img/;}
+nginxは alias を見て、
+alias方式でパスを作る
+と判断する。
+結果は、
+/images/test.html↓/var/www/img/test.html
+
+一番大事な違い
+root  = rootの後ろにURLパスをそのまま足すalias = locationで一致した部分をaliasのパスに置き換える
+これだけ。
+
+例で固定する
+location /images/ {    root /var/www;}
+アクセス：
+/images/test.html
+探す場所：
+/var/www/images/test.html
+
+location /images/ {    alias /var/www/img/;}
+アクセス：
+/images/test.html
+探す場所：
+/var/www/img/test.html
+
+だから今回の課題では、alias と書いた瞬間にnginxは alias方式で解釈する。
+合図は 設定ファイル内の alias というディレクティブ名。
+
