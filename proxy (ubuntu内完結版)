@@ -1,0 +1,75 @@
+proxy（Ubuntu内完結版）の流れ
+■ 構成
+[ブラウザ or curl（Ubuntu内）]
+        ↓ localhost:8080
+[nginx（Ubuntu）]
+        ↓ proxy_pass
+[pythonサーバ（Ubuntu :3001）]
+
+👉 全部Ubuntuの中だけで完結
+
+■ ステップ①：pythonサーバ起動
+python3 -m http.server 3001
+Serving HTTP on 0.0.0.0 port 3001
+■ ステップ②：nginx設定
+sudo nano /etc/nginx/sites-enabled/default
+server {
+    listen 8080;
+
+    location / {
+        proxy_pass http://127.0.0.1:3001/;
+    }
+}
+■ ステップ③：反映
+sudo nginx -t
+sudo systemctl reload nginx
+■ ステップ④：確認
+
+Ubuntu内で👇
+
+curl http://127.0.0.1:8080/
+
+👉 返ってくれば成功
+
+■ 実際の通信の流れ
+① curl http://127.0.0.1:8080/
+
+② nginxが受け取る（8080）
+
+③ proxy_pass実行
+   → 127.0.0.1:3001 に転送
+
+④ pythonサーバがレスポンス返す
+
+⑤ nginxが受け取る
+
+⑥ curlに返す
+■ エラー切り分け（ここ重要）
+❌ curl 3001がダメ
+curl http://127.0.0.1:3001/
+
+👉 ダメなら
+
+pythonサーバ未起動
+❌ curl 8080が502
+curl http://127.0.0.1:8080/
+
+👉 ダメなら
+
+nginxは動いてる
+でもproxy先（3001）が死んでる
+❌ curl 8080が404/403
+
+👉
+
+nginx設定 or ファイル問題
+■ 重要ポイント
+localhostの正体
+127.0.0.1 = 自分自身（Ubuntu自身）
+
+👉 今回は全部同じマシンだからシンプル
+
+■ 一言まとめ（強い）
+同一サーバ内で、nginxがlocalhost:8080で受けたリクエストを
+localhost:3001のpythonサーバへproxyしている
+🔥 この構成の意味
