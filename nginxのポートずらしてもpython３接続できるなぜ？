@@ -1,0 +1,90 @@
+## 起動してないポートへずらしてもページが表示される
+
+ここはかなり大事な切り分けポイント。
+「ポートをずらしたのに表示される」は、ほぼ そのアクセスが編集したlocationを通っていない か 別の設定が効いている パターン。
+
+まず確認はこの順番。
+
+1. nginx経由で見てるか確認
+
+python直通ではなく、nginx側を見る。
+
+curl http://localhost:8080/
+
+または nginx が80番なら
+
+curl http://localhost/
+
+curl http://localhost:3001/ はpython直通だから、proxy設定は関係ない。
+
+2. nginxが本当に読んでいる設定を見る
+
+これが一番強い。
+
+sudo nginx -T | grep -n "proxy_pass"
+
+ここに、今ずらしたポートが出るか確認。
+
+例：
+
+proxy_pass http://127.0.0.1:3999/;
+
+が出れば反映されてる。
+
+出なければ、編集しているファイルが違うか、別設定が有効。
+
+3. listenポートを確認
+sudo nginx -T | grep -n "listen"
+
+自分がアクセスしているポートと、nginxが待ち受けているポートが一致してるか見る。
+
+例：
+
+listen 8080;
+
+ならアクセスはこれ。
+
+curl http://localhost:8080/
+4. ありがちな原因
+
+一番多いのはこれ。
+
+設定は変えた
+でもアクセスしているURLがそのserver/locationを通ってない
+
+たとえば、
+
+location / {
+    proxy_pass http://127.0.0.1:3999/;
+}
+
+を変えたのに、
+
+curl http://localhost:3001/
+
+を見ている場合は、python直通なので表示される。
+
+5. 強制的に確認する方法
+
+locationに一時的にこれを入れる。
+
+location / {
+    return 200 "nginx location hit\n";
+}
+
+反映。
+
+sudo nginx -t
+sudo systemctl reload nginx
+
+確認。
+
+curl http://localhost:8080/
+
+これで
+
+nginx location hit
+
+が出れば、そのlocationを通ってる。
+
+出なければ、別のserver設定を見ている。
