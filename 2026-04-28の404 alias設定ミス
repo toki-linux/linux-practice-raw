@@ -1,0 +1,53 @@
+# 404  No such file or directory (open() "/var/www/imgtest.html")
+
+## 概要
+ブラウザでアクセスした時に404と表示される
+
+## 症状
+ブラウザで404エラー
+
+## 原因
+nginx設定ファイルのalias指定で、末尾の / が不足していた。
+location /images/ {
+    alias /var/www/img;
+}
+この状態で /images/test.html にアクセスすると、nginxは以下のように解釈する。
+/images/ を削除
+↓
+test.html が残る
+↓
+/var/www/img + test.html
+↓
+/var/www/imgtest.html を探す
+その結果、存在しないパスを探して404となった。
+
+## 解決
+sudo nano/etc/nginx/sites-enabled/default でnginx設定ファイルを開き、
+locationの欄を正しく書き直した
+/を書き忘れていたので書き足した
+alias /var/www/img; → alias /var/www/img/;
+
+## 切り分け手順
+1. access.logで404を確認
+2. error.logでパスの書きミスを確認
+3. nginx設定ファイルのlocationの欄を確認
+4. 修正
+
+## 再現手順
+nginx設定ファイルでalias末尾の / を外す。
+location /images/ {
+    alias /var/www/img;
+}
+その後、以下にアクセスする。
+curl http://localhost:8080/images/test.html
+
+## 学び
+aliasは、locationで一致した部分を削除し、残ったパスをaliasで指定したパスの後ろにつなげる。
+そのため、locationが /images/ のように末尾 / を含む場合、alias側も / で終えないと、パスが正しく結合されない。
+404エラーでは、error.logを見ることでnginxが実際に探したファイルパスを確認できる。
+
+## 応用（任意）
+404エラー時のerror.logでパスが違うと見えることがわかる
+404のパターンの一つとしてすぐ対処できる
+404が出た場合は、単に「ファイルがない」と考えるだけでなく、
+nginxがどのパスを探しているかをerror.logで確認する。
