@@ -1,0 +1,88 @@
+nginx aliasミスによる404（URLとパスのズレ）
+■ 結論（まず一言で）
+aliasの設定ミスにより、URLと実際のファイルパスがズレて404になる
+■ 全体像
+
+nginxは、クライアントから来たURLをもとに
+設定ファイル（location・root・alias）を使って
+実際のファイルパスに変換し、ファイルを返す仕組みである。
+
+■ 用語・前提
+location：URLの条件分岐（どの設定を使うか決める）
+root：URLをそのまま後ろにくっつける
+alias：locationで一致した部分を置き換える
+error.log：エラーの原因が出るログ（最重要）
+■ 仕組み（重要）
+URLにアクセスが来る（例：/images/test.html）
+nginxがlocationを選ぶ（例：location /images/）
+rootまたはaliasでファイルパスに変換する
+そのパスのファイルを探す
+存在しなければ404になる
+■ パターン整理
+パターン①（root）
+条件：rootを使用
+結果：
+URL: /images/test.html
+↓
+/var/www + /images/test.html
+↓
+/var/www/images/test.html
+パターン②（alias）
+条件：aliasを使用
+結果：
+URL: /images/test.html
+↓
+/images/ を削除
+↓
+test.html
+↓
+/var/www/img/ と結合
+↓
+/var/www/img/test.html
+■ コマンド・確認方法
+# error.log確認（リアルタイム）
+tail -f /var/log/nginx/error.log
+
+# access.log確認
+tail -f /var/log/nginx/access.log
+
+# ファイル存在確認
+ls -l /var/www/img/
+■ 具体例
+ミス設定
+location /images/ {
+    alias /var/www/img;   # ← スラッシュなし
+}
+アクセス
+http://localhost/images/test.html
+実際の変換
+/images/ を削除
+↓
+test.html
+↓
+/var/www/img + test.html
+↓
+/var/www/imgtest.html（存在しない）
+error.log
+open() "/var/www/imgtest.html" failed (2: No such file or directory)
+
+👉 パスの結合ミスに気づくことが重要
+
+■ よくあるミス
+aliasの末尾スラッシュ忘れ
+rootとaliasの違いを混同
+locationの範囲ミス（/images/ と /images の違い）
+■ 学び（重要）
+
+nginxはURLをそのまま使うのではなく、
+location・root・aliasを使ってファイルパスに変換している。
+
+そのため、設定ミスがあると「ファイルが存在していても」404になる。
+
+また、error.logを見ることで
+実際にnginxが探しているパスを確認でき、原因特定につながる。
+
+■ 応用
+404エラーの原因切り分け（パスミスか、ファイル未存在か）
+rootとaliasの使い分け（静的ファイルの配置設計）
+ログからのトラブルシューティング能力向上
