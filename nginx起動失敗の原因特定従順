@@ -1,0 +1,12 @@
+nginx起動失敗の原因特定手順
+
+① systemctl start nginx で起動
+② 起動失敗したら nginx -t を実行
+③ エラーメッセージの
+   ・ファイルパス
+   ・行番号
+   ・原因（unexpected / unknown directive など）
+   を読む
+④ 該当箇所を修正
+⑤ nginx -t → OK を確認
+⑥ systemctl start nginx 再実行
