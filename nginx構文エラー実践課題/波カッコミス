@@ -1,0 +1,15 @@
+## やったこと
+nginx設定ファイル波カッコを外してみた
+その後、sudo nginx -t とすると
+toki@ubuntu-toki:~$ sudo nginx -t
+nginx: [emerg] unexpected end of file, expecting "}" in /etc/nginx/sites-enabled/default:94
+nginx: configuration file /etc/nginx/nginx.conf test failed
+となった。
+
+## みるポイント
+・どこで閉じ忘れてるか
+/etc/nginx/sites-enabled/defaultの94行目に重大なミス
+・「end of file」って何を意味してるか
+ファイルの終わり
+unexpected end of file
+ファイルの終わりに予想外のミス
