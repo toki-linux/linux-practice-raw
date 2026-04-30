@@ -12,3 +12,6 @@ nginx: configuration file /etc/nginx/nginx.conf test failed
 無効パラメータ
 ・何が足りないか
 "listen"がおかしい。みに行ってみると「;」がなかった
+
+##  直し方
+設定ファイル/etc/nginx/sites-enabled/defaultの23行目のlisten80ところにセミコロンをつける
