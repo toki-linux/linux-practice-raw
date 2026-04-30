@@ -1,0 +1,14 @@
+## 目的
+nginxが落ちたら自動で復旧する仕組みを作る
+
+## 流れ
+サービスの起動確認とポートが開いているかの確認
+systemctl status nginx / ss -tulnp | grep :80
+nginx設定ファイルに不具合がないかチェック
+sudo nginx -t
+nginxが落ちたら自動で復旧するシェルスクリプト作成
+中身：
+/var/spool/cronに時間指定して設定
+* * * * * /bin/bash /home/toki/test/cron.txt 
+できているか検証
+/var/log/nginx/test.logを見る
