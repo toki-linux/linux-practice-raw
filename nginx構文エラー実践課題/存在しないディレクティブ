@@ -9,3 +9,6 @@ nginx: configuration file /etc/nginx/nginx.conf test failed
 ・スペルミスでも即死する
 unknown directibveとなっており、存在し無いディレクティブだと言われている
 場所は/etc/nginx/sites-enabled/defaultの41行目
+
+## 直し方
+設定ファイルの存在し無いディレクティブroootをrootに直す
