@@ -1,0 +1,11 @@
+## やったこと
+設定ファイルの中のrootディレクティブをroootにして存在し無いディレクティブを作った
+その後、sudo nginx -tとすると
+nginx: [emerg] unknown directive "rooot" in /etc/nginx/sites-enabled/default:41
+nginx: configuration file /etc/nginx/nginx.conf test failed
+となった。
+
+## みるポイント
+・スペルミスでも即死する
+unknown directibveとなっており、存在し無いディレクティブだと言われている
+場所は/etc/nginx/sites-enabled/defaultの41行目
