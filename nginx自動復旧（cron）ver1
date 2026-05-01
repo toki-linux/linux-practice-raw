@@ -1,0 +1,34 @@
+## 目的
+nginxが落ちたら自動で復旧する仕組みを作る
+
+## 流れ
+サービスの起動確認とポートが開いているかの確認
+systemctl status nginx / ss -tulnp | grep :80
+nginx設定ファイルに不具合がないかチェック
+sudo nginx -t
+nginxが落ちたら自動で復旧するシェルスクリプト作成
+中身：
+#!/bin/bash
+
+
+if [ $(systemctl is-active nginx) = inactive ]
+then
+systemctl restart nginx
+fi
+
+手動でテストしてみる
+nginxを止める
+sudo systemctl stop nginx
+その後、
+bash ~/test/cron.txt
+nginxが動いていたら成功
+systemctl status nginx
+/var/spool/cronに時間指定して設定
+* * * * * /bin/bash /home/toki/test/cron.txt 
+1分間隔でcron.txtを実行
+
+## 学び
+シェルスクリプトでifを使うときelseが必要ないなら書かなくて良い
+手動でテストしてみてからcronで自動化するのが良い
+
+
