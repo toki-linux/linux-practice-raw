@@ -1,0 +1,15 @@
+## パス問題
+
+パス問題
+❌ ダメな例
+* * * * * nginx_monitor.sh
+
+👉 cronはそのファイル見つけられない
+
+⭕ 正解
+* * * * * /bin/bash /home/toki/test/nginx_monitor.sh
+
+👉 絶対パスで書く
+
+## なぜ？
+cronは「どこで実行するか」が曖昧（カレントディレクトリが違う）
