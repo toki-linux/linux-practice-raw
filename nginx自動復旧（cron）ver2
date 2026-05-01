@@ -1,0 +1,88 @@
+## 目的
+nginxが落ちたら自動で復旧する仕組みを作る＋ログにも残す
+
+## 流れ
+nginxが動いているか確認
+systemctl status nginx
+ポートが開いているか確認
+ss -tulnp | grep :80
+nginx設定チェック
+sudo nginx -t
+自動復旧スクリプト作成
+中身：
+#!/bin/bash
+
+LOG="/var/log/nginx/test.log"
+
+echo "=== $(date) nginx check ===" >> "$LOG"
+
+if ! systemctl is-active --quiet nginx; then
+    echo "nginx is inactive. restarting..." >> "$LOG"
+    systemctl restart nginx
+else
+    echo "nginx is active." >> "$LOG"
+fi
+
+権限確認
+ls -l ~/test/cron.txt
+実行権がない場合
+sudo chmod +x ~/test/cron.txtで実行権を追加
+
+手動でテストしてみる
+bash ~/test/cron.txt
+なぜbashコマンドで行う？
+→bash で実行するのは「確実にbashとして動かすため」
+直接実行もOK、でも条件がある
+sourceは用途が違う（今回NG寄り）
+[詳しい理由はこちら](https://github.com/toki-linux/linux-practice-raw/blob/main/bash%20%E7%9B%B4%E6%8E%A5%E5%AE%9F%E8%A1%8C%20source)
+
+自動化する
+個人の自動化なので/var/spool/cronファイルに書き込む
+sudo crontab -e
+* * * * * /bin/bash /home/toki/test/cron.txt
+なぜsudoでcrontab開いた？
+→ root権限で実行して欲しかったから。cronは誰が実行するかで権限が決まる。そのため、スクリプト内の内容によってはroot権限で行わなければいけ無い場合がある
+root権限で行うとは、sudo crontab -e は「rootユーザーのcronに登録する」という意味であり、
+その結果としてスクリプトもroot権限で実行されるということ。
+
+サービスを停めて自動実行されるかみる
+sudo systemctl stop nginx
+
+ログをチェック
+tail -f /var/log/nginx/test.log
+ただし注意点。
+
+/var/log/nginx/test.log に書き込むなら、一般ユーザーのcronでは権限で失敗する可能性が高い。
+
+
+
+## 学び
+root権限で行う理由
+--quietがあったほうがいいわけ
+スクリプトの書き方
+
+
+
+
+
+ifの条件式でsystemctl is-active --quiet nginxとした
+--quietを使う理由は？
+→ --quietの役割は「判定だけして、余計な出力を消す」。無駄な出力を無くしたいため
+if systemctl is-active nginx だと成り立た無いの？--quietの必要性がわから無い
+if systemctl is-active nginx でも動く（成り立つ）
+--quietは「出力を消すため」だけ
+例：
+echo "nginx is running" >> logと混ざって、
+active
+nginx is running
+active
+nginx is running
+と出力される。これだと読みにくい
+
+
+
+
+
+
+
+
