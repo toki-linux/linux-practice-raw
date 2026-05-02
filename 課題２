@@ -1,0 +1,55 @@
+## 目的
+nginxの location を複数使い分ける練習
+
+条件
+nginx：80番
+Pythonサーバ①：3001番
+Pythonサーバ②：3002番
+
+行った手順
+
+1. nginxサービスが起動しているか確認
+systemctl status nginx
+2. ポートが開いているか確認
+ss -tulnp | grep :80
+3. nginx設定ファイルの確認
+sudo nano /etc/nginx/sites-enabled/default
+locationを変更、追加した
+   location /app/ {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                #try_files $uri $uri/ =404;
+                #alias /var/www/img/;
+                proxy_pass http://127.0.0.1:3001/;
+　　　　　}
+    location /api/ {
+                proxy_pass http://127.0.0.1:3002/;
+        }
+
+4. 設定ファイルに不備がないか確認
+sudo nginx -t
+5. 設定を反映
+sudo systemctl reload nginx
+6. それぞれのwebページとして使いたいindex.htmlファイルがあるディレクトリに移動。ファイルの中身確認
+cd ~/upstream-test
+ls 
+index.html
+cat index.html
+upstream ok
+
+cd ~/test
+ls 
+index.html
+cat index.html
+test2
+
+7. ファイルやディレクトリの権限確認
+chmod使う。ディレクトリには実行権、ファイルには読む権利が必要。othersに必要
+8. それぞれでpythonサーバ起動
+python3 -m http.server 3001
+python3 -m http.server 3002
+9. ポートが開いているかの確認
+ss -tulnp | grep -E '(:3001|:3002)'
+
+これで多分通る。もし通らなかった場合設定ファイルのlocationの欄を見直すか、pythonサーバの起動に失敗しているか、ポートが間違っていることが多い
+403の場合は設定ファイルをよく見て、404はURLをよく見て、502はpythonサーバの設定を確認する
