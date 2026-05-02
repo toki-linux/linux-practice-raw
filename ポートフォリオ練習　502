@@ -1,0 +1,29 @@
+まず一個の事例から始める
+症状：
+502 Bad Gateway
+
+根拠ログ：
+connect() failed (111: Connection refused)
+
+原因：
+Pythonサーバが起動していなかった
+
+解決：
+python3 -m http.server 3000
+これが素材
+
+同じ系統を集める3~5ぐらい
+今回の場合は502の原因を3つ集めた
+・サーバ未起動
+・ポート違い
+・listenしていない
+
+共通点を抜く
+upstreamに繋がら無い
+
+切り分け方法をまとめる
+実際にやったコマンドを整理
+ss -tulnp
+systemctl status
+error.log
+
