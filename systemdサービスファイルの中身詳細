@@ -1,0 +1,34 @@
+## systemdサービスファイルを設定するときの書式
+
+
+[Unit]    → このサービスの説明・起動順
+[Service] → 実際にどう動かすか
+[Install] → 自動起動するとき、どこに紐づけるか
+
+
+まず覚える型
+
+最初はこの型でいい。
+
+[Unit]
+Description=サービスの説明
+After=network.target
+
+[Service]
+User=実行ユーザー名
+WorkingDirectory=作業ディレクトリ
+ExecStart=実行したいコマンドのフルパス
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+これを日本語にすると、
+
+このサービスは〇〇です。
+ネットワークが使える状態になった後に起動します。
+〇〇ユーザーとして動かします。
+〇〇ディレクトリで実行します。
+起動時には〇〇コマンドを実行します。
+失敗したら再起動します。
+自動起動する場合は通常のサーバ起動状態に紐づけます。
