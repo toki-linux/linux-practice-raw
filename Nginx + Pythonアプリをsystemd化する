@@ -1,0 +1,85 @@
+## 目的
+Nginx + Pythonアプリをsystemd化する
+
+
+課題：
+Pythonアプリをsystemdサービス化し、
+Nginxからリバースプロキシして表示できる構成を作れ。
+
+行なった手順
+
+1. pythonサーバとなるディレクトリを作る
+mkdir myapp
+2. その中にindex.htmlファイルを作る。これがwebページとなる
+3. 作ったファイルやディレクトリの権限確認
+ls -ld myapp
+ls -l myapp
+ディレクトリには実行権、ファイルには見る権利があったのでok。othersの権限で見る
+4. myappディレクトリに移動しpythonサーバとして起動。ポートは3000番で待ち受ける
+cd ~/myapp
+python3 -m http.server 3000
+
+次にリバースプロキシとなるnginx関係について見ていく
+5. nginxサービスが起動しているか確認
+systemctl status nginx
+6. ポートが開いているか確認。pythonサーバのポートも開いているか確認
+ss -tulnp | grep -E '(:80|:3000)'
+7. nginx設定ファイルでproxyの設定をする
+sudo nano /etc/nginx/sites-enabled/default
+        location /app/ {
+                proxy_pass http://127.0.0.1:3000/;
+        }
+この設定はURLでappとあればlocalhost:3000番にプロキシしてという意味
+8. 設定に不備がないか確認
+sudo nginx -t
+9. 設定を反映
+sudo systemctl reload nginx
+10. 一度テストを行ってみる
+curl http://localhost/app/
+結果は成功だった。access.logにも異常なし
+11. 一度pythonサーバを止める
+ctrl＋c
+
+ここから本番
+手動でpythonを起動していたのをsystemdにさせる
+12. systemdサービスファイルを作る
+sudo nano /etc/systemd/system/myapp.service
+中身
+[Unit]
+Description=My Python App Service
+After=network.target
+
+[Service]
+User=toki
+WorkingDirectory=/home/toki/myapp
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+13. systemdに設定ファイルを読み込ませる
+sudo systemctl daemon-reload
+14. pythonアプリサービスを起動
+sudo systemctl start myapp
+15. 起動できているか確認
+systemctl status myapp
+16. ポートが開いているか確認
+ss -tulnp | grep :3000
+17. curlで確認
+systemd化後の確認は localhost:3000 と /app/ の両方を見る
+curl http://127.0.0.1:3000
+これは、Pythonアプリに直接アクセスできるかの確認。
+curl http://localhost/app/
+これは、Nginx経由でPythonアプリにアクセスできるかの確認。
+
+やったことまとめ
+今回、Pythonの簡易HTTPサーバをsystemdサービスとして登録し、Nginxからリバースプロキシで接続する構成を作成した。
+
+これまでは python3 -m http.server を手動で起動していたが、systemdサービス化することで、systemctlによる起動・停止・状態確認ができるようになった。
+
+また、Nginxのproxy_passを使うことで、ブラウザからはNginxの80番ポートにアクセスし、Nginxが裏側のPythonアプリ3000番ポートへリクエストを中継する構成を確認した。
+
+
+
+
