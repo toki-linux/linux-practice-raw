@@ -32,3 +32,18 @@ WantedBy=multi-user.target
 起動時には〇〇コマンドを実行します。
 失敗したら再起動します。
 自動起動する場合は通常のサーバ起動状態に紐づけます。
+
+
+具体例：
+[Unit]
+Description=My Python App Service
+After=network.target
+
+[Service]
+User=toki
+WorkingDirectory=/home/toki/myapp
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
