@@ -1,0 +1,26 @@
+sudo nginx -tとsudo myapp.service -t の違いは何？
+
+
+nginxは「nginx -t」という設定チェック機能を持っている。
+
+でもmyapp.serviceはプログラムではなくsystemd用の設定ファイルなので、
+myapp.service -t とは実行できない。
+
+serviceファイルを確認したいなら systemd-analyze verify、
+起動失敗を確認したいなら systemctl status と journalctl を使う。
+
+## 補足
+nginx -t
+= nginx本体が持っている設定ファイルチェック機能
+
+systemd-analyze verify myapp.service
+= systemdのserviceファイルの文法チェック
+
+systemctl status myapp
+= サービスとして起動できたか確認
+
+journalctl -u myapp -xe
+= 起動失敗の理由を見る
+
+ExecStartのコマンドを手で実行
+= アプリ本体が動くか確認
