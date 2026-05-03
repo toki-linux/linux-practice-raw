@@ -1,0 +1,27 @@
+pythonアプリをsystemdサービス化する方法
+
+1. systemcdサービスファイルを作る
+sudo nano /etc/systemd/system/myapp.service
+中身
+[Unit]
+Description=My Python App Service
+After=network.target
+
+[Service]
+User=toki
+WorkingDirectory=/home/toki/myapp
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+2. systemdに読み込ませる
+サービスファイルを作っただけでは、まだsystemdが認識していない。
+だから読み込ませる。
+sudo systemctl daemon-reload
+3. pythonサービスを開始
+sudo systemctl start myapp
+4. 状態確認
+systemctl status myapp
+runningなら成功
