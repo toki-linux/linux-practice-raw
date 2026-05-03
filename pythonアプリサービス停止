@@ -1,0 +1,27 @@
+Pythonアプリサービスを停止して502を出す
+
+症状：
+curl http://localhost/app/ にアクセスすると502 Bad Gatewayが表示された。
+
+access.log：
+/app/ へのアクセス記録があり、ステータスコード502が記録されていた。
+
+error.log：
+connect() failed (111: Connection refused) while connecting to upstream が出力されていた。
+
+原因：
+Nginxは起動しており、/app/ へのアクセスも受け取れていた。
+しかし、リバースプロキシ先である http://127.0.0.1:3000/ のPythonアプリサービスが停止していた。
+そのため、Nginxがupstreamへ接続できず502となった。
+
+確認：
+systemctl status myapp でPythonアプリサービスが inactive であることを確認した。
+また、ss -tulnp | grep :3000 でも3000番ポートで待ち受けているプロセスがないことを確認した。
+
+解決：
+sudo systemctl start myapp でPythonアプリサービスを起動した。
+その後、curl http://127.0.0.1:3000 と curl http://localhost/app/ の両方で正常に応答が返ることを確認した。
+
+学び：
+502 Bad Gatewayは、Nginx自体の停止ではなく、Nginxが裏側のupstreamに正常接続できない場合に発生する。
+Nginx経由で502が出た場合は、Nginxの状態だけでなく、upstream側のサービス状態、待ち受けポート、proxy_passの向き先を確認する必要がある。
