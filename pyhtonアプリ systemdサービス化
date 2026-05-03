@@ -1,7 +1,12 @@
 pythonアプリをsystemdサービス化する方法
 
+ホームディレクトリにあるmyappディレクトリのindex.htmlファイルをwebページとしたい
+
 1. systemcdサービスファイルを作る
 sudo nano /etc/systemd/system/myapp.service
+
+myapp.serviceファイルの中にmyappをサービスとして認知させる設定を書き込んでいる
+
 中身
 [Unit]
 Description=My Python App Service
