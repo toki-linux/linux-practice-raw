@@ -21,6 +21,12 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 
+[Unit]    → このサービスの説明・起動順
+[Service] → 実際にどう動かすか
+[Install] → 自動起動するとき、どこに紐づけるか
+
+
+
 2. systemdに読み込ませる
 サービスファイルを作っただけでは、まだsystemdが認識していない。
 だから読み込ませる。
