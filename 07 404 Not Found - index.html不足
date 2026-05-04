@@ -159,10 +159,24 @@ curl http://localhost/app/
 どちらも index.html の内容が返れば復旧完了。
 
 学び
-
 Nginx経由で404が返っていても、必ずしもNginx側が原因とは限らない。
-
 今回のように、Pythonアプリに直接アクセスしても404が返る場合は、upstreamであるPythonアプリ側、特に配信ディレクトリやファイルの有無を確認する必要がある。
-
 Pythonの簡易HTTPサーバは、起動時の作業ディレクトリ内のファイルを配信する。
 そのため、WorkingDirectory と実際のファイル配置をセットで確認することが大切。
+今回404エラーコードが出たのはpython側の仕様で見ているから。
+Nginxが403を出しているのではなく、Python http.server が404を返している。
+重要な違い
+Nginxが直接ファイルを探す
+↓
+ディレクトリはあるがindex.htmlなし
+↓
+一覧表示禁止
+↓
+403になりやすい
+NginxがPythonへproxyする
+↓
+Python http.serverがファイルを探す
+↓
+Python側が「File not found」と判断
+↓
+404になる
