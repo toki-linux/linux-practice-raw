@@ -1,0 +1,228 @@
+# 06 502 Bad Gateway - Nginxの不要なヘッダー設定
+
+## 症状
+
+`curl http://localhost/app/` でアクセスすると、502 Bad Gateway が表示された。
+
+## 期待される状態
+
+Nginx経由でPythonアプリにアクセスし、PythonサーバのWebページが表示されること。
+
+## 実際の状態
+
+Nginx経由でアクセスすると、502 Bad Gateway が返った。
+
+## 原因候補
+
+- Nginxサービスが停止している
+- Pythonアプリサービスが停止している
+- Pythonアプリが3000番ポートでLISTENしていない
+- Nginxのproxy_pass先が間違っている
+- Nginxのproxy設定に不要、または不適切なヘッダー設定がある
+
+## 確認したログ・コマンド
+
+### 1. Nginxの状態確認
+
+```bash
+systemctl status nginx
+結果
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-05-03 13:10:02 JST; 12min ago
+判断：
+
+Nginxは active (running) のため、Nginxサービス自体は起動している。
+2. Pythonアプリサービスの状態確認
+systemctl status myapp
+
+結果：
+
+● myapp.service - My Python App Service
+     Loaded: loaded (/etc/systemd/system/myapp.service; disabled; preset: enabled)
+     Active: active (running) since Sun 2026-05-03 13:09:48 JST; 12min ago
+   Main PID: 2118 (python3)
+   CGroup: /system.slice/myapp.service
+           └─2118 /usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+
+判断：
+
+Pythonアプリサービスも active (running) のため、サービス自体は起動している。
+3. ポート確認
+ss -tulnp | grep -E '(:80|:3000)'
+
+結果：
+
+tcp   LISTEN 0      511        0.0.0.0:80        0.0.0.0:*    users:(("nginx",pid=2140,fd=6))
+tcp   LISTEN 0      5        127.0.0.1:3000      0.0.0.0:*    users:(("python3",pid=2118,fd=3))
+
+判断：
+
+80番はNginx、3000番はPythonアプリがLISTENしている。
+PythonアプリはNginxのproxy_pass先と同じ127.0.0.1:3000で待ち受けている。
+4. Pythonアプリ単体の確認
+curl http://localhost:3000
+
+結果：
+
+Hello from Python App Service
+
+判断：
+
+Pythonアプリ単体には正常にアクセスできている。
+そのため、Pythonアプリの起動状態や3000番ポートの待ち受けは問題ない。
+5. Nginx access.logの確認
+tail -n 5 /var/log/nginx/access.log
+
+結果：
+
+127.0.0.1 - - [03/May/2026:13:21:40 +0900] "GET /app/ HTTP/1.1" 502 157 "-" "curl/8.5.0"
+127.0.0.1 - - [03/May/2026:13:21:58 +0900] "GET /app/ HTTP/1.1" 502 157 "-" "curl/8.5.0"
+127.0.0.1 - - [03/May/2026:13:22:13 +0900] "GET /app/ HTTP/1.1" 502 157 "-" "curl/8.5.0"
+
+判断：
+
+/app/ へのアクセスはNginxまで届いている。
+ただし、Nginxは502を返している。
+6. Nginx error.logの確認
+tail -n 5 /var/log/nginx/error.log
+
+結果：
+
+2026/05/03 13:21:40 [error] 2141#2141: *41 upstream prematurely closed connection while reading response header from upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+2026/05/03 13:21:58 [error] 2141#2141: *43 upstream prematurely closed connection while reading response header from upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+2026/05/03 13:22:13 [error] 2141#2141: *45 upstream prematurely closed connection while reading response header from upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+
+判断：
+
+Nginxはupstreamである http://127.0.0.1:3000/ へ接続しようとしている。
+ただし、Connection refused ではなく、upstreamがレスポンスヘッダーを返す前に接続を閉じている。
+そのため、upstream自体が存在しないというより、Nginxからupstreamへ送るリクエスト内容に問題がある可能性を考えた。
+7. Nginx設定ファイルの確認
+sudo cat /etc/nginx/sites-enabled/default
+
+結果：
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name _;
+
+    location /app/ {
+        proxy_pass http://127.0.0.1:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+判断：
+
+proxy_passは http://127.0.0.1:3000/ を向いており、Pythonアプリの待ち受け先と一致している。
+一方で、proxy_http_version 1.1 と proxy_set_header Connection "upgrade"; が設定されている。
+Pythonの簡易HTTPサーバには不要なヘッダー設定のため、この部分が原因の可能性があると考えた。
+8. myapp.serviceの確認
+sudo cat /etc/systemd/system/myapp.service
+
+結果：
+
+[Unit]
+Description=My Python App Service
+After=network.target
+
+[Service]
+User=toki
+WorkingDirectory=/home/toki/myapp
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+判断：
+
+myapp.service の ExecStart、WorkingDirectory、bind先は想定通りだった。
+Pythonアプリサービス側の設定は大きな問題がなさそうだと判断した。
+切り分け
+
+Nginxは active (running) であり、80番ポートもLISTENしていた。
+Pythonアプリサービスも active (running) であり、3000番ポートも 127.0.0.1:3000 でLISTENしていた。
+
+また、curl http://localhost:3000 ではPythonアプリ単体に正常にアクセスできた。
+このため、Pythonアプリの起動状態、待ち受けポート、bind先は問題ないと判断した。
+
+一方で、curl http://localhost/app/ では502 Bad Gatewayが返った。
+access.logには /app/ へのアクセスと502が記録されており、リクエストはNginxまで届いていた。
+
+error.logには upstream prematurely closed connection while reading response header from upstream と出ていた。
+これは、NginxがupstreamであるPythonアプリからレスポンスヘッダーを受け取る前に、upstream側が接続を閉じたことを示している。
+
+Nginx設定ファイルを確認すると、proxy_pass は http://127.0.0.1:3000/ で正しく、Pythonアプリの待ち受け先と一致していた。
+しかし、proxy_http_version 1.1 と proxy_set_header Connection "upgrade"; が設定されていた。
+
+proxy_set_header Connection "upgrade"; はURLを書き換える設定ではなく、Nginxがupstreamへ送るHTTPヘッダーを変更する設定である。
+今回のPython簡易HTTPサーバには不要なヘッダー設定だったため、Nginxからupstreamへ送るリクエスト内容が不適切になり、Pythonアプリが正常に応答できなかった可能性が高いと判断した。
+
+原因
+
+Nginxの location /app/ に、Pythonの簡易HTTPサーバには不要なヘッダー設定が含まれていた。
+
+proxy_http_version 1.1;
+proxy_set_header Connection "upgrade";
+
+この設定により、NginxがupstreamであるPythonアプリへ通常とは異なる Connection: upgrade ヘッダーを送っていた。
+
+Pythonアプリ単体では正常に応答し、Nginxのproxy_pass先も 127.0.0.1:3000 で一致していた。
+しかし、Nginx経由ではupstreamがレスポンスヘッダーを返す前に接続を閉じたため、502 Bad Gateway が発生した。
+
+解決
+
+Nginx設定ファイルから、Python簡易HTTPサーバには不要な以下の設定を削除する。
+
+削除する設定：
+
+proxy_http_version 1.1;
+proxy_set_header Connection "upgrade";
+
+修正後：
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name _;
+
+    location /app/ {
+        proxy_pass http://127.0.0.1:3000/;
+    }
+}
+
+設定ファイルの構文確認。
+
+sudo nginx -t
+
+Nginxに設定を反映する。
+
+sudo systemctl reload nginx
+解決後の確認
+
+Pythonアプリ単体の確認。
+
+curl http://127.0.0.1:3000
+
+Nginx経由の確認。
+
+curl http://localhost/app/
+
+どちらも index.html の内容が返れば復旧完了。
+
+学び
+
+proxy_set_header はURLを書き換える設定ではなく、Nginxがupstreamへ送るHTTPヘッダーを追加・変更する設定である。
+
+今回の Connection: upgrade は、通常のHTTP通信から別の通信方式へ切り替える意図を持つヘッダーであり、WebSocketなどで使われることがある。
+しかし、今回のPython簡易HTTPサーバには不要な設定だった。
+
+502 Bad Gatewayでは、upstreamが停止している場合だけでなく、Nginxからupstreamへ送るHTTPリクエストの内容が不適切で、upstream側が正常に応答できない場合もある。
+
+Pythonアプリ単体では成功するのに、Nginx経由だけ失敗する場合は、proxy_pass だけでなく、proxy_set_header や proxy_http_version などのNginx側の中継設定も確認する必要がある。
