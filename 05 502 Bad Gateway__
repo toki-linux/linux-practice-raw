@@ -1,0 +1,372 @@
+# 05 502 Bad Gateway - Pythonアプリのbind先ミス
+
+## 症状
+
+`curl http://localhost/app/` でアクセスした時、502 Bad Gateway が表示される。
+
+## 期待される状態
+
+Nginx経由でPythonアプリにアクセスし、PythonサーバのWebページが表示されること。
+
+## 実際の状態
+
+502 Bad Gateway が表示された。
+
+## 原因候補
+
+- Pythonアプリサービスが起動していない
+- Nginx設定ファイルのproxy_pass設定が間違っている
+- Pythonアプリが3000番でLISTENしていない
+- Pythonアプリが別のIPやポートでLISTENしている
+- myapp.service設定ファイルが間違っている
+
+## 確認したログ・コマンド
+
+### 1. Nginxの状態確認
+
+実行コマンド：
+
+```bash
+systemctl status nginx
+```
+
+結果：
+
+```text
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: active (running)
+```
+
+判断：
+
+```text
+Nginxは active (running) のため、Nginxサービスは起動している。
+```
+
+---
+
+### 2. Pythonアプリサービスの状態確認
+
+実行コマンド：
+
+```bash
+systemctl status myapp
+```
+
+結果：
+
+```text
+● myapp.service - My Python App Service
+     Loaded: loaded (/etc/systemd/system/myapp.service; disabled; preset: enabled)
+     Active: active (running)
+```
+
+判断：
+
+```text
+Pythonアプリサービスも active (running) のため、サービス自体は起動している。
+```
+
+---
+
+### 3. ポート確認
+
+実行コマンド：
+
+```bash
+ss -tulnp | grep -E '(:80|:3000)'
+```
+
+結果：
+
+```text
+tcp   LISTEN 0      511        0.0.0.0:80          0.0.0.0:*    users:(("nginx",pid=1280,fd=6))
+tcp   LISTEN 0      5        192.168.1.50:3000     0.0.0.0:*    users:(("python3",pid=1880,fd=3))
+```
+
+判断：
+
+```text
+80番はNginxがLISTENしている。
+3000番はPythonアプリがLISTENしているが、待ち受けているIPアドレスは127.0.0.1ではなく192.168.1.50である。
+```
+
+---
+
+### 4. Pythonアプリ単体の確認 1
+
+実行コマンド：
+
+```bash
+curl http://127.0.0.1:3000
+```
+
+結果：
+
+```text
+curl: (7) Failed to connect to 127.0.0.1 port 3000 after 0 ms: Connection refused
+```
+
+判断：
+
+```text
+127.0.0.1:3000 には接続できない。
+つまり、Pythonアプリは127.0.0.1:3000では待ち受けていない。
+```
+
+---
+
+### 5. Pythonアプリ単体の確認 2
+
+実行コマンド：
+
+```bash
+curl http://192.168.1.50:3000
+```
+
+結果：
+
+```text
+Hello from Python App Service
+```
+
+判断：
+
+```text
+192.168.1.50:3000 ではPythonアプリに接続できる。
+このことから、Pythonアプリは起動しており、192.168.1.50:3000で待ち受けていると判断できる。
+```
+
+---
+
+### 6. Nginx経由の確認
+
+実行コマンド：
+
+```bash
+curl http://localhost/app/
+```
+
+結果：
+
+```html
+<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx/1.24.0</center>
+</body>
+</html>
+```
+
+判断：
+
+```text
+Nginx経由でアクセスすると502になる。
+Pythonアプリ自体は起動しているため、NginxからPythonアプリへの接続先に問題がある可能性が高い。
+```
+
+---
+
+### 7. Nginx access.logの確認
+
+実行コマンド：
+
+```bash
+sudo tail -n 20 /var/log/nginx/access.log
+```
+
+結果：
+
+```text
+127.0.0.1 - - [03/May/2026:12:35:12 +0900] "GET /app/ HTTP/1.1" 502 157 "-" "curl/8.5.0"
+```
+
+判断：
+
+```text
+access.logに /app/ へのアクセスと502が記録されているため、リクエストはNginxまで届いている。
+```
+
+---
+
+### 8. Nginx error.logの確認
+
+実行コマンド：
+
+```bash
+sudo tail -n 30 /var/log/nginx/error.log
+```
+
+結果：
+
+```text
+2026/05/03 12:35:12 [error] 1283#1283: *31 connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+```
+
+判断：
+
+```text
+Nginxはupstreamである http://127.0.0.1:3000/ に接続しようとしている。
+しかし、Pythonアプリは127.0.0.1:3000では待ち受けていないため、Connection refused になっている。
+```
+
+---
+
+### 9. myapp.serviceのExecStart確認
+
+実行コマンド：
+
+```bash
+grep -n "ExecStart" /etc/systemd/system/myapp.service
+```
+
+結果：
+
+```text
+8:ExecStart=/usr/bin/python3 -m http.server 3000 --bind 192.168.1.50
+```
+
+判断：
+
+```text
+Pythonアプリは --bind 192.168.1.50 により、192.168.1.50:3000で待ち受ける設定になっている。
+```
+
+---
+
+### 10. Nginx設定ファイルのproxy_pass確認
+
+実行コマンド：
+
+```bash
+grep -n "proxy_pass" /etc/nginx/sites-enabled/default
+```
+
+結果：
+
+```text
+48:        proxy_pass http://127.0.0.1:3000/;
+```
+
+判断：
+
+```text
+Nginxは http://127.0.0.1:3000/ へリクエストを中継する設定になっている。
+しかし、Pythonアプリは192.168.1.50:3000で待ち受けているため、Nginxの接続先とPythonアプリの待ち受けIPが一致していない。
+```
+
+## 切り分け
+
+Nginxは `active (running)` であり、80番ポートもLISTENしていたため、Nginxサービス停止や80番ポートの待ち受け不備ではないと判断した。
+
+Pythonアプリサービスも `active (running)` であり、3000番ポートもLISTENしていた。  
+ただし、ssの結果を見ると、Pythonアプリは `127.0.0.1:3000` ではなく、`192.168.1.50:3000` でLISTENしていた。
+
+`curl http://127.0.0.1:3000` は Connection refused となったが、`curl http://192.168.1.50:3000` は成功した。  
+このことから、Pythonアプリ自体は起動しているが、127.0.0.1では待ち受けていないと判断した。
+
+Nginx経由で `curl http://localhost/app/` を実行すると502になった。  
+access.logにも `/app/` へのアクセスと502が記録されており、リクエストはNginxまで届いている。
+
+Nginxのerror.logでは、upstreamが `http://127.0.0.1:3000/` になっていた。  
+また、Nginx設定ファイルのproxy_passも `http://127.0.0.1:3000/` になっていた。
+
+一方で、myapp.serviceのExecStartでは `--bind 192.168.1.50` が指定されていた。  
+つまり、Nginxは `127.0.0.1:3000` に接続しようとしているが、Pythonアプリは `192.168.1.50:3000` で待ち受けていた。
+
+以上から、Pythonアプリのbind先とNginxのproxy_pass先が一致していないことが原因だと判断した。
+
+## 原因
+
+Pythonアプリの待ち受けIPアドレスと、Nginxのproxy_pass先が一致していなかった。
+
+myapp.serviceでは、Pythonアプリが `192.168.1.50:3000` で待ち受けるように設定されていた。
+
+```ini
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 192.168.1.50
+```
+
+一方で、Nginxは `127.0.0.1:3000` へリクエストを中継する設定になっていた。
+
+```nginx
+proxy_pass http://127.0.0.1:3000/;
+```
+
+そのため、Nginxが接続しようとした `127.0.0.1:3000` にはPythonアプリが存在せず、502 Bad Gateway が発生した。
+
+## 解決
+
+今回の構成では、Pythonアプリを外部に直接公開せず、Nginx経由でアクセスさせたい。  
+そのため、Nginxのproxy_passはそのままにして、Pythonアプリを `127.0.0.1:3000` で待ち受けるように修正する。
+
+myapp.serviceを編集する。
+
+```bash
+sudo nano /etc/systemd/system/myapp.service
+```
+
+修正前：
+
+```ini
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 192.168.1.50
+```
+
+修正後：
+
+```ini
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+```
+
+設定変更をsystemdに反映する。
+
+```bash
+sudo systemctl daemon-reload
+```
+
+myapp.serviceを再起動する。
+
+```bash
+sudo systemctl restart myapp
+```
+
+## 解決後の確認
+
+Pythonアプリサービスの状態確認。
+
+```bash
+systemctl status myapp
+```
+
+3000番ポートの確認。
+
+```bash
+ss -tulnp | grep :3000
+```
+
+Pythonアプリ単体の確認。
+
+```bash
+curl http://127.0.0.1:3000
+```
+
+Nginx経由の確認。
+
+```bash
+curl http://localhost/app/
+```
+
+どちらも `index.html` の内容が返れば復旧完了。
+
+## 学び
+
+`--bind` は、PythonアプリがどのIPアドレスで待ち受けるかを指定する設定である。  
+一方で、`WorkingDirectory` はどのディレクトリのファイルを配信するかを指定する設定である。
+
+ポート番号が同じでも、待ち受けているIPアドレスが異なると接続できない場合がある。
+
+今回、Pythonアプリは `192.168.1.50:3000` で待ち受けていたが、Nginxは `127.0.0.1:3000` へ接続しようとしていた。  
+そのため、3000番ポート自体はLISTENしていても、Nginxが接続する先にはPythonアプリが存在せず502になった。
+
+ssで確認する時は、ポート番号だけでなく、どのIPアドレスでLISTENしているかも見る必要がある。
