@@ -1,0 +1,41 @@
+## 異常検知テスト
+
+myapp.service を手動で停止し、監視スクリプトが異常を検知できるか確認した。
+
+sudo systemctl stop myapp
+
+その後、cronによって check_web_stack.sh が実行され、ログには以下のように記録された。
+
+nginx: OK
+myapp: NG
+port 80: OK
+port 3000: NG
+http check: NG
+
+この結果から、Nginx自体は起動しているが、myapp.service が停止しており、3000番ポートで待ち受けるプロセスが存在しないと判断できる。
+
+そのため、Nginx経由のHTTPチェックも失敗している。
+
+
+## 復旧
+
+myapp.service を起動した。
+
+sudo systemctl start myapp
+
+その後、再度ログを確認し、以下のようにOKへ戻ることを確認した。
+
+nginx: OK
+myapp: OK
+port 80: OK
+port 3000: OK
+http check: OK
+
+これにより、監視スクリプトで異常検知と復旧後の正常確認ができることを確認した。
+
+## 学び
+サービス状態、ポート状態、HTTP応答を分けて確認することで、
+どの層で異常が起きているかをログから推測できる。
+
+myappが停止すると、myappのサービス状態だけでなく、
+3000番ポートとHTTPチェックにも影響が出る。
