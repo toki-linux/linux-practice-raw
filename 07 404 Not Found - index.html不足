@@ -1,0 +1,168 @@
+# 07 404 Not Found - index.html不足
+
+## 症状
+
+`curl http://localhost/app/` を実行すると、404 Not Found が表示された。
+
+## 期待される状態
+
+Nginx経由でPythonアプリにアクセスし、`index.html` の内容が表示されること。
+
+## 実際の状態
+
+404 Not Found が表示された。
+
+## 原因候補
+
+- Nginxのlocation設定が間違っている
+- Nginxのproxy_pass先が間違っている
+- Pythonアプリサービスが停止している
+- PythonアプリのWorkingDirectoryが間違っている
+- Pythonアプリが配信しているディレクトリにindex.htmlが存在しない
+
+## 確認したログ・コマンド
+
+### Pythonアプリ単体の確認
+
+```bash
+curl http://localhost:3000
+
+結果：
+
+Error code: 404
+Message: File not found.
+
+判断：
+
+Nginxを経由せずPythonアプリに直接アクセスしても404が返っている。
+そのため、Nginx側ではなくPythonアプリ側、またはPythonアプリが配信しているディレクトリ内のファイル不足が原因の可能性が高い。
+Pythonアプリサービスの状態確認
+systemctl status myapp
+
+結果：
+
+Active: active (running)
+
+判断：
+
+Pythonアプリサービス自体は起動している。
+Nginx access.logの確認
+tail -n 5 /var/log/nginx/access.log
+
+結果：
+
+"GET /app/ HTTP/1.1" 404
+
+判断：
+
+/app/ へのアクセスはNginxまで届いており、404が返っている。
+Nginx error.logの確認
+tail -n 10 /var/log/nginx/error.log
+
+結果：
+
+今回の /app/ アクセスに関する新しいエラーは出ていない。
+
+判断：
+
+Nginx自体のエラーではなく、upstreamであるPythonアプリから404が返っている可能性が高い。
+Nginx設定ファイルの確認
+sudo cat /etc/nginx/sites-enabled/default
+
+結果：
+
+location /app/ {
+    proxy_pass http://127.0.0.1:3000/;
+}
+
+判断：
+
+Nginxは /app/ へのアクセスを 127.0.0.1:3000 へ中継しており、proxy_pass先は想定通り。
+myapp.serviceの確認
+sudo cat /etc/systemd/system/myapp.service
+
+結果：
+
+WorkingDirectory=/home/toki/myapp
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+
+判断：
+
+Pythonアプリは /home/toki/myapp を作業ディレクトリとして起動している。
+つまり、このディレクトリ内のファイルが配信対象になる。
+配信ディレクトリの確認
+ls /home/toki/myapp
+
+結果：
+
+about.html
+README.txt
+
+判断：
+
+/home/toki/myapp に index.html が存在しない。
+ディレクトリ権限の確認
+ls -ld /home/toki/myapp
+
+結果：
+
+drwxr-xr-x 2 toki toki 4096 May 03 14:00 /home/toki/myapp
+
+判断：
+
+ディレクトリは存在しており、権限も問題なさそう。
+そのため、権限ではなく index.html が存在しないことが原因だと判断した。
+切り分け
+
+Pythonアプリサービスは active (running) で起動していた。
+また、Nginx設定ファイルの proxy_pass も http://127.0.0.1:3000/ を向いており、想定通りだった。
+
+一方で、curl http://localhost:3000 でPythonアプリに直接アクセスしても404が返った。
+そのため、Nginx側ではなく、Pythonアプリが配信している内容側に問題があると考えた。
+
+myapp.serviceを確認すると、WorkingDirectory=/home/toki/myapp となっていた。
+Pythonの簡易HTTPサーバは、起動時の作業ディレクトリ内のファイルを配信する。
+
+そこで /home/toki/myapp の中身を確認したところ、about.html と README.txt は存在していたが、index.html は存在していなかった。
+
+以上から、Pythonアプリが配信しているディレクトリ内に index.html が存在しないことが原因だと判断した。
+
+原因
+
+/home/toki/myapp に index.html が存在しなかったため、Pythonアプリが / に対応するファイルを返せず、404 Not Found が発生した。
+
+Nginx経由でも同じPythonアプリへ中継しているため、curl http://localhost/app/ でも404が返った。
+
+解決
+
+/home/toki/myapp に index.html を作成する。
+
+echo '<h1>Hello from Python App Service</h1>' > /home/toki/myapp/index.html
+
+権限を確認する。
+
+ls -l /home/toki/myapp/index.html
+
+必要なら権限を変更する。
+
+chmod 644 /home/toki/myapp/index.html
+解決後の確認
+
+Pythonアプリ単体の確認。
+
+curl http://127.0.0.1:3000
+
+Nginx経由の確認。
+
+curl http://localhost/app/
+
+どちらも index.html の内容が返れば復旧完了。
+
+学び
+
+Nginx経由で404が返っていても、必ずしもNginx側が原因とは限らない。
+
+今回のように、Pythonアプリに直接アクセスしても404が返る場合は、upstreamであるPythonアプリ側、特に配信ディレクトリやファイルの有無を確認する必要がある。
+
+Pythonの簡易HTTPサーバは、起動時の作業ディレクトリ内のファイルを配信する。
+そのため、WorkingDirectory と実際のファイル配置をセットで確認することが大切。
