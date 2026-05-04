@@ -1,0 +1,57 @@
+ヘッダは、ひと言でいうと 通信にくっついている追加情報。
+Web通信、つまりHTTPでは、データ本体だけを送っているわけじゃなくて、
+何を取りに行きたいのか
+誰から来たのか
+どんな形式で受け取りたいのか
+接続をどう扱うのか
+ログイン情報はあるか
+どのブラウザから来たのか
+みたいな情報も一緒に送っている。
+この追加情報のまとまりが HTTPヘッダ。
+
+HTTPリクエストの形
+たとえば、curlでアクセスすると、イメージとしてはこんなリクエストが送られる。
+GET /app/ HTTP/1.1
+Host: localhost
+User-Agent: curl/8.5.0
+Accept: */*
+
+分けるとこう。
+
+GET /app/ HTTP/1.1
+→ リクエスト行
+
+Host: localhost
+User-Agent: curl/8.5.0
+Accept: */*
+→ ヘッダ
+
+空行
+→ ヘッダの終わり
+今回のようなGETリクエストだと、ボディ、つまり本文はないことが多い。
+
+ヘッダの例
+よく見るヘッダはこんな感じ。
+Host: localhost
+User-Agent: curl/8.5.0
+Accept: */*
+Connection: keep-alive
+Content-Type: application/json
+Authorization: Bearer xxxxx
+Cookie: session_id=xxxxx
+それぞれざっくり言うと、
+Host
+→ どのホスト宛てか
+User-Agent
+→ curlなのか、Chromeなのか、どのクライアントから来たか
+Accept
+→ どんな形式のレスポンスを受け取りたいか
+Connection
+→ 接続をどう扱うか
+Content-Type
+→ 送るデータの種類
+Authorization
+→ 認証情報
+Cookie
+→ セッション情報
+つまりヘッダは、通信の補足情報を書く欄。
