@@ -1,0 +1,77 @@
+curl http://localhost/app/をすると502が出ている
+
+nginxサービスの起動確認とpythonサービスの起動確認をする
+systemctl status nginx
+systemctl status myapp
+ともにactiveだった
+ポートを見る
+80 3000ともにlisten状態。使っているプロセスも正しい
+curlでpythonに直接繋ぐ
+webページ見える。つまりアクセスとおる
+つまり、pythonに問題はないのではないか？
+nginxのaccess.logを見る
+502という情報
+nginxのerror.logを見る
+2026/05/03 13:21:40 [error] 2141#2141: *41 upstream prematurely closed connection while reading response header from upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+2026/05/03 13:21:58 [error] 2141#2141: *43 upstream prematurely closed connection while reading response header from upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+2026/05/03 13:22:13 [error] 2141#2141: *45 upstream prematurely closed connection while reading response header from upstream, client: 127.0.0.1, server: _, request: "GET /app/ HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "localhost"
+upstreamは応答見出しを読んでいる間に接続素早く閉じた
+nginx設定ファイルの中身みる
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name _;
+
+    location /app/ {
+        proxy_pass http://127.0.0.1:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "upgrade";
+    }
+}
+違和感のような正常のようなわからない
+とりあえず、pythonの設定ファイル見てみる
+問題なし
+
+
+多分問題はnginx設定ファイルの
+proxy_set_header Connection "upgrade";
+ここかなと思う。
+推測
+proxy_set_header は頭にupgradeをつなげる
+つまり、/app/なのではなくて、/upgradeapp/になっている？
+
+
+回答
+proxy_set_header Connection "upgrade";
+
+これは、URLの前に upgrade を付ける設定ではない。
+つまり、/app/ が /upgradeapp/ になるわけではない。
+
+何をしている設定か
+proxy_set_header Connection "upgrade";
+
+これは、Nginxが裏側のPythonアプリへリクエストを送る時に、HTTPヘッダーとしてこれを付ける設定。
+
+Connection: upgrade
+
+つまり、URLを書き換えるのではなく、通信の追加情報を渡している。
+
+
+## 学び
+proxy_set_header はURLを書き換える設定ではなく、upstreamへ送るHTTPヘッダーを追加・変更する設定。
+
+502 Bad Gatewayでは、upstreamが停止している場合だけでなく、Nginxからupstreamへ送るHTTPリクエストの内容が不適切で、upstream側が正常に応答できない場合もある。
+
+Pythonアプリ単体では成功するのに、Nginx経由だけ失敗する場合は、proxy_passだけでなく、proxy_set_headerやproxy_http_versionなどのNginx側の中継設定も確認する必要がある。
+
+まとめ
+proxy_pass
+→ どこへ中継するか
+
+proxy_set_header
+→ 中継するときに、どんな追加情報を渡すか
+
+proxy_http_version
+→ 中継するときに使うHTTPのバージョン
+
