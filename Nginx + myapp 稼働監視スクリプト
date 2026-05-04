@@ -1,0 +1,30 @@
+# Nginx + myapp 稼働監視スクリプト
+
+## 目的
+
+Nginxとsystemdで管理しているPythonアプリが正常に稼働しているかを、自動で確認するための監視スクリプトを作成した。
+
+## 確認内容
+
+- nginx.service が active か
+- myapp.service が active か
+- 80番ポートがLISTENしているか
+- 3000番ポートがLISTENしているか
+- Nginx経由で `http://localhost/app/` にアクセスできるか
+
+## 使用したコマンド
+
+- systemctl is-active --quiet
+- ss -tulnp
+- grep -q
+- curl
+- date
+- cron
+
+## 学び
+
+サービスが active でも、Webアプリとして正常に応答しているとは限らない。
+
+そのため、サービス状態、ポート状態、HTTP応答を分けて確認することで、どの層で問題が起きているかを判断しやすくなる。
+
+また、cronを使うことで、手動で確認していた処理を定期的に自動実行できることを確認した。
