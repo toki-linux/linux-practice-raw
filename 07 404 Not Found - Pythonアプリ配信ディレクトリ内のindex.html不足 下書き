@@ -1,0 +1,71 @@
+curl http://localhost/app/　で404エラーでた
+404はwebページとなるファイルが存在しないことで起きることが多い
+
+nginxサービスとpythonサービスは起動していてポートもlistens状態であることを前提とする
+curlでpythonに直接接続してみる
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error response</title>
+</head>
+<body>
+<h1>Error response</h1>
+<p>Error code: 404</p>
+<p>Message: File not found.</p>
+<p>Error code explanation: 404 - Nothing matches the given URI.</p>
+</body>
+</html>
+エラーでた。
+つまり、nginx経由でもダメだし、直接でもダメ
+nginxのaccess.logを見る
+404コード
+nginxのerror.logを見る
+何もでなかった
+nginx設定ファイルを見る
+異常ない
+python設定ファイルを見る
+異常ない
+/home/toki/myappの中にindex.htmlファイルがあるか確認
+index.htmlファイルがなかった。
+権限問題なし
+
+原因
+指定した場所にindex.htmlファイルが存在しない
+
+
+解決法
+指定した場所にindex.htmlファイルを作る
+sudo nano /home/toki/myapp/index.html
+中身
+<h>hello<h>
+
+権限変更
+sudo chmod 644 /home/toki/myapp/index.html
+
+修正ポイント
+1. HTMLタグはこう
+<h1>Hello</h1>
+
+<h> ではなく、見出しなら <h1> が自然。
+
+2. sudo は必須ではないかも
+
+/home/toki/myapp の所有者が toki だから、tokiユーザーなら sudo なしで作れる。
+
+nano /home/toki/myapp/index.html
+
+または一発で作るなら、
+
+echo '<h1>Hello from Python App Service</h1>' > /home/toki/myapp/index.html
+3. 権限は 644 でOK
+
+これはOK。
+
+chmod 644 /home/toki/myapp/index.html
+
+ただし、tokiユーザーで作ったなら最初から 644 になっていることも多い。
+
+確認はこれ。
+
+ls -l /home/toki/myapp/index.html
