@@ -1,0 +1,30 @@
+# /tmpログファイルへのPermission denied
+
+## 症状
+
+`toki` ユーザーで作成された `/tmp/web_stack_check.log` に対して、root権限で実行したスクリプトから追記しようとしたところ、Permission denied が発生した。
+
+## 確認
+
+```bash
+ls -l /tmp/web_stack_check.log
+
+結果：
+
+-rw-rw-r-- 1 toki toki 4659 May 5 11:55 /tmp/web_stack_check.log
+原因
+
+/tmp は共有ディレクトリであり、セキュリティ上、他ユーザーが作成したファイルへの追記が制限される場合がある。
+
+そのため、root権限で実行していても、/tmp 内の既存ログファイルへの追記が拒否された。
+
+解決
+
+root cronで実行する監視スクリプトのログ出力先を /var/log/web_stack_check.log に変更した。
+
+LOG="/var/log/web_stack_check.log"
+学び
+
+root権限で実行すれば必ずすべてのファイルに書き込めると思っていたが、/tmp のような共有ディレクトリでは保護設定が影響する場合がある。
+
+root権限で動かす監視・復旧スクリプトのログは、/var/log に置く方が自然だと学んだ。
