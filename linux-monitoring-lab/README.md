@@ -78,6 +78,19 @@ linux-web-monitoring-lab/
     ├── permission_denied_tmp.md
     └── monitoring_notes.md
 ```
+## 主なファイル
+- [監視・自動復旧スクリプト]()
+- [myapp.service]()
+- [Nginx設定ファイル]()
+## 検証ログ
+- [正常時ログ]()
+- [myapp停止ログ]()
+- [自動復旧時ログ]()
+## 詳細ドキュメント
+- [自動復旧テスト]()
+- [/tmpログファイルのPermission denied]()
+- [監視スクリプトの学び]()
+
 ## 検証結果  
 正常時  
   
