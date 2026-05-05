@@ -8,11 +8,10 @@ myapp.service が停止した場合に、監視スクリプトが異常を検知
 
 1. myapp.service を停止する
 
-```bash
 sudo systemctl stop myapp
-cronまたは手動で監視スクリプトを実行する
+2. cronまたは手動で監視スクリプトを実行する
 sudo bash /home/toki/linux-monitoring-lab/check_web_stack.sh
-ログを確認する
+3. ログを確認する
 sudo tail -n 30 /var/log/web_stack_check.log
 結果
 
