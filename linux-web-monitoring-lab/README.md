@@ -60,6 +60,7 @@ ss
 grep  
 curl  
 ## ディレクトリ構成  
+```txt
 linux-web-monitoring-lab/
 ├── README.md
 ├── scripts/
@@ -75,6 +76,7 @@ linux-web-monitoring-lab/
     ├── auto_recovery_test.md
     ├── permission_denied_tmp.md
     └── monitoring_notes.md
+```
 ## 検証結果  
 正常時  
   
