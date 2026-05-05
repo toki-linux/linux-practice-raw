@@ -1,0 +1,342 @@
+SSH鍵認証では、秘密鍵を持つクライアントが、
+サーバ側の authorized_keys に登録された公開鍵と照合される。
+
+scpで公開鍵を送るときの -i は、
+送るファイルを暗号化するためではなく、
+SSH接続にログインするための秘密鍵指定。
+
+接続に使う鍵と、送る公開鍵ファイルは別でもよい。
+
+最初にサーバへ公開鍵を置くには、
+パスワード認証、ssh-copy-id、クラウドの初期設定、
+管理者登録、または直接コンソールログインなどの別ルートを使う。
+
+公開鍵を authorized_keys に登録した後、
+次回から対応する秘密鍵でSSHログインできる。
+
+
+
+SSH接続時に秘密鍵を指定する理由
+
+ssh や scp の -i で指定する秘密鍵は、ファイルを暗号化するためではない。
+
+-i ~/.ssh/my_test_key
+= SSHログイン時に、自分が正当なユーザーだと証明するための秘密鍵
+
+scp はファイル転送コマンドだが、内部ではSSH接続を使う。
+
+流れはこう。
+
+1. scpを実行する
+2. 内部でSSH接続する
+3. サーバにログインしてよいか認証される
+4. 認証OKなら、暗号化されたSSH通信路ができる
+5. その通信路の中でファイルを送る
+
+つまり、秘密鍵は「送るファイルの暗号化用」ではなく、「SSH接続のログイン認証用」。
+
+6. scpコマンドの読み方
+
+例。
+
+scp -P 2222 -i ~/.ssh/id_ed25519 ~/.ssh/my_test_key.pub toki@localhost:~
+
+分解するとこう。
+
+-P 2222
+= SSH接続先ポートは2222
+
+-i ~/.ssh/id_ed25519
+= SSH接続の認証に使う秘密鍵
+
+~/.ssh/my_test_key.pub
+= 送るファイル
+
+toki@localhost:~
+= 送り先。localhostのtokiユーザーのホームディレクトリ
+
+ここで大事なのは、
+
+-iで指定する秘密鍵
+= 接続に使う鍵
+
+送る my_test_key.pub
+= サーバに登録したい公開鍵ファイル
+
+この2つは役割が違う。
+
+7. 接続用の鍵と、送る公開鍵は違ってもいい
+
+たとえば、すでにログインできる鍵があるとする。
+
+すでに使える鍵ペア
+秘密鍵: ~/.ssh/id_ed25519
+公開鍵: ~/.ssh/id_ed25519.pub
+→ サーバの authorized_keys に登録済み
+
+これから新しく登録したい鍵がある。
+
+新しく登録したい鍵ペア
+秘密鍵: ~/.ssh/my_test_key
+公開鍵: ~/.ssh/my_test_key.pub
+→ まだサーバには未登録
+
+この場合、公開鍵を送るときはこうできる。
+
+scp -P 2222 -i ~/.ssh/id_ed25519 ~/.ssh/my_test_key.pub toki@localhost:~
+
+意味はこう。
+
+id_ed25519 でログインして、
+my_test_key.pub という公開鍵ファイルをサーバに送る
+
+つまり、接続に使う鍵と送る公開鍵ファイルは別でもよい。
+
+たとえでいうと、
+
+-i の秘密鍵
+= 建物に入るための社員証
+
+my_test_key.pub
+= 建物の中に持ち込みたい申請書
+
+申請書の内容は「次回からこの新しい鍵でも入れるようにしてください」というもの。
+
+8. 今まで秘密鍵を指定しなくても接続できた理由
+
+秘密鍵なしで接続できていたわけではない。
+
+正しくは、
+
+秘密鍵をコマンドに明示していなかっただけで、
+SSHが自動で秘密鍵を探して使っていた
+
+可能性がある。
+
+SSHは標準名の秘密鍵を自動で探す。
+
+~/.ssh/id_rsa
+~/.ssh/id_ecdsa
+~/.ssh/id_ed25519
+
+また、以下の可能性もある。
+
+1. 標準名の秘密鍵をSSHが自動で使っていた
+2. ssh-agent が秘密鍵を覚えていた
+3. パスワード認証でログインしていた
+4. ~/.ssh/config に使用する鍵が設定されていた
+
+どの鍵を使っているか確認するには、詳細ログを見る。
+
+ssh -vvv -p 2222 toki@localhost
+
+見るポイント。
+
+Offering public key: /home/ユーザー名/.ssh/id_ed25519
+
+このように出ていれば、その鍵を使おうとしている。
+
+9. 鍵を複数持っている場合は -i を使う
+
+鍵を複数持っている場合、SSHが意図しない鍵を使うことがある。
+
+そのため、明示したいときは -i を使う。
+
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+
+scpでも同じ。
+
+scp -P 2222 -i ~/.ssh/my_test_key file.txt toki@localhost:~
+
+ただし、-i に指定するのは秘密鍵。
+
+OK:
+-i ~/.ssh/my_test_key
+
+NG:
+-i ~/.ssh/my_test_key.pub
+10. どの秘密鍵を入場券にするかは自分で決められる
+
+-i を使えば、どの秘密鍵で接続するかを自分で指定できる。
+
+ただし条件がある。
+
+その秘密鍵とペアになる公開鍵が、
+接続先サーバの ~/.ssh/authorized_keys に登録されていること
+
+接続の流れ。
+
+1. -i で秘密鍵を選ぶ
+2. サーバは authorized_keys にある公開鍵と照合する
+3. ペアならログインOK
+4. ペアでなければ拒否
+
+例。
+
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+
+このとき、サーバ側に以下が必要。
+
+/home/toki/.ssh/authorized_keys
+↑ この中に my_test_key.pub の中身が登録されている
+11. サーバに一番はじめに公開鍵を登録する方法
+
+最初は、まだ鍵認証では入れない。
+
+そのため、最初だけ別の方法でサーバに入って公開鍵を置く。
+
+代表的な方法。
+
+1. パスワード認証で最初にSSHログインする
+2. ssh-copy-idを使う
+3. クラウド作成時に公開鍵を登録しておく
+4. 管理者があらかじめ authorized_keys に入れておく
+5. VirtualBoxや実機の画面から直接ログインして貼る
+12. 最初だけパスワード認証で公開鍵を送る方法
+
+まだ使える鍵ペアがない場合、scp に -i は付けない。
+
+scp -P 2222 ~/.ssh/my_test_key.pub toki@localhost:~
+
+このとき、パスワードを聞かれる。
+
+toki@localhost's password:
+
+ここで、Ubuntu側の toki ユーザーのパスワードを入力する。
+
+送れたら、パスワードでSSHログインする。
+
+ssh -p 2222 toki@localhost
+
+サーバ側に入ったら、公開鍵を登録する。
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+cat ~/my_test_key.pub >> ~/.ssh/authorized_keys
+
+chmod 600 ~/.ssh/authorized_keys
+
+ログアウトする。
+
+exit
+
+次に、鍵認証で接続できるか確認する。
+
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+13. ssh-copy-idを使う方法
+
+パスワードログインができる状態なら、ssh-copy-id が便利。
+
+ssh-copy-id -p 2222 -i ~/.ssh/my_test_key.pub toki@localhost
+
+これは内部で以下をやってくれる。
+
+1. パスワードでSSHログイン
+2. サーバ側に ~/.ssh を作る
+3. authorized_keys に公開鍵を追記する
+4. 権限を整える
+
+その後、鍵認証で接続確認。
+
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+14. VirtualBoxのUbuntu画面から直接貼る方法
+
+SSHでまだ入れない場合でも、VirtualBoxの画面からUbuntuに直接ログインできるなら、公開鍵を貼れる。
+
+クライアント側で公開鍵の中身を表示。
+
+cat ~/.ssh/my_test_key.pub
+
+表示された1行をコピーする。
+
+サーバ側、つまりUbuntu側で実行。
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys
+
+公開鍵1行を貼り付ける。
+
+保存後、権限を整える。
+
+chmod 600 ~/.ssh/authorized_keys
+
+その後、クライアント側から接続確認。
+
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+15. authorized_keysに登録するもの
+
+登録するのは、公開鍵ファイルそのものではなく、公開鍵ファイルの中身。
+
+cat ~/.ssh/my_test_key.pub
+
+出てくる1行を、サーバ側の以下に入れる。
+
+~/.ssh/authorized_keys
+
+例。
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... toki ssh lab key
+
+この1行が登録されていれば、そのペアの秘密鍵でログインできる。
+
+16. 権限設定が大事
+
+SSHでは権限がゆるすぎると、鍵認証が拒否されることがある。
+
+サーバ側。
+
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
+クライアント側の秘密鍵。
+
+chmod 600 ~/.ssh/my_test_key
+
+意味。
+
+~/.ssh
+= 自分だけが入れるディレクトリ
+
+authorized_keys
+= 自分だけが読み書きできる公開鍵リスト
+
+秘密鍵
+= 自分だけが読めるファイル
+17. よくあるコマンドまとめ
+
+鍵作成。
+
+ssh-keygen -t ed25519 -f ~/.ssh/my_test_key
+
+公開鍵を送る。パスワード認証の場合。
+
+scp -P 2222 ~/.ssh/my_test_key.pub toki@localhost:~
+
+公開鍵を送る。すでに使える鍵を指定する場合。
+
+scp -P 2222 -i ~/.ssh/id_ed25519 ~/.ssh/my_test_key.pub toki@localhost:~
+
+サーバ側で公開鍵を登録。
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+cat ~/my_test_key.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+鍵認証で接続。
+
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+
+ssh-copy-idで登録。
+
+ssh-copy-id -p 2222 -i ~/.ssh/my_test_key.pub toki@localhost
+
+詳細ログで確認。
+
+ssh -vvv -p 2222 -i ~/.ssh/my_test_key toki@localhost
+
+ssh-agentに登録済みの鍵確認。
+
+ssh-add -l
