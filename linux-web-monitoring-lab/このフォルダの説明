@@ -1,0 +1,17 @@
+README.md
+→ 全体の説明・構成・何ができるか
+
+scripts/check_web_stack.sh
+→ 実際に作った監視スクリプト
+
+configs/myapp.service
+→ Pythonアプリのsystemd設定
+
+configs/nginx-default.conf
+→ Nginxのリバースプロキシ設定
+
+logs/
+→ 正常時・異常時・復旧時のログ例
+
+docs/
+→ 詳しい検証内容・つまずき・学び
