@@ -5,7 +5,7 @@ TIME="$(date '+%Y-%m-%d %H:%M:%S')"
 
 echo "=== $TIME web stack check ===" >> "$LOG"
 
-# nginx check
+# nginx service check
 if systemctl is-active --quiet nginx
 then
     echo "$TIME nginx: OK" >> "$LOG"
@@ -13,7 +13,7 @@ else
     echo "$TIME nginx: NG" >> "$LOG"
 fi
 
-# myapp check
+# myapp service check
 if systemctl is-active --quiet myapp
 then
     echo "$TIME myapp: OK" >> "$LOG"
@@ -22,6 +22,10 @@ else
     echo "$TIME action: starting myapp" >> "$LOG"
 
     systemctl start myapp
+
+    # Wait a few seconds because the service may become active
+    # before the application starts listening on port 3000.
+    sleep 2
 
     if systemctl is-active --quiet myapp
     then
@@ -32,7 +36,7 @@ else
 fi
 
 # port 80 check
-if ss -tulnp | grep -q ':80'
+if ss -tulnp | grep -q ':80 '
 then
     echo "$TIME port 80: OK" >> "$LOG"
 else
@@ -40,14 +44,14 @@ else
 fi
 
 # port 3000 check
-if ss -tulnp | grep -q ':3000'
+if ss -tulnp | grep -q ':3000 '
 then
     echo "$TIME port 3000: OK" >> "$LOG"
 else
     echo "$TIME port 3000: NG" >> "$LOG"
 fi
 
-# http check
+# HTTP response check via Nginx
 if curl -s http://localhost/app/ | grep -q -i "Hello"
 then
     echo "$TIME http check: OK" >> "$LOG"
