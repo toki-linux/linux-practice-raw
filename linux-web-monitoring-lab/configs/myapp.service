@@ -1,1 +1,12 @@
+[Unit]
+Description=My Python App Service
+After=network.target
 
+[Service]
+User=toki
+WorkingDirectory=/home/toki/myapp
+ExecStart=/usr/bin/python3 -m http.server 3000 --bind 127.0.0.1
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
