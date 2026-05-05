@@ -132,6 +132,13 @@ http check: OK
 自動復旧テスト
 /tmpログファイルのPermission denied
 監視スクリプトの学び
+自動復旧直後のポート確認
+myapp.service を自動起動した直後、`systemctl is-active myapp` では active になっていたが、直後のポート確認では `port 3000: NG` になることがあった。
+後から手動で確認すると3000番ポートはLISTENしていたため、サービス起動直後にポートが開くまでのわずかな時間差が原因だと考えた。
+そのため、`systemctl start myapp` の直後に `sleep 2` を入れ、起動後に少し待ってからポート確認へ進むように修正した。
+詳細は以下に記録している。
+- [監視スクリプトの学び](docs/monitoring_notes.md)
+
 学び
 
 サービスが active でも、Webサービスとして正常に応答しているとは限らない。
