@@ -32,7 +32,7 @@ cron
 check_web_stack.sh  
 ↓  
 /var/log/web_stack_check.log  
-監視項目  
+## 監視項目  
 
 このスクリプトでは、以下を確認する。  
 
@@ -41,14 +41,14 @@ myapp.service が active か
 80番ポートがLISTENしているか  
 3000番ポートがLISTENしているか  
 curl http://localhost/app/ が成功するか  
-主な機能  
+## 主な機能  
 サービス状態の確認  
 ポート状態の確認  
 HTTP応答確認  
 ログ出力  
 myapp停止時の自動復旧  
 cronによる定期実行  
-使用技術・コマンド  
+## 使用技術・コマンド  
 Ubuntu  
 Nginx  
 Python http.server  
@@ -59,23 +59,23 @@ systemctl
 ss  
 grep  
 curl  
-ディレクトリ構成  
-linux-web-monitoring-lab/  
-├── README.md  
-├── scripts/  
-│   └── check_web_stack.sh  
-├── configs/  
-│   ├── myapp.service  
-│   └── nginx-default.conf  
-├── logs/  
-│   ├── normal.log  
-│   ├── myapp_down.log  
-│   └── auto_recovery.log  
-└── docs/  
-    ├── auto_recovery_test.md  
-    ├── permission_denied_tmp.md  
-    └── monitoring_notes.md  
-検証結果  
+## ディレクトリ構成  
+linux-web-monitoring-lab/
+├── README.md
+├── scripts/
+│   └── check_web_stack.sh
+├── configs/
+│   ├── myapp.service
+│   └── nginx-default.conf
+├── logs/
+│   ├── normal.log
+│   ├── myapp_down.log
+│   └── auto_recovery.log
+└── docs/
+    ├── auto_recovery_test.md
+    ├── permission_denied_tmp.md
+    └── monitoring_notes.md
+## 検証結果  
 正常時  
   
 すべての監視項目がOKになることを確認した。  
@@ -97,7 +97,7 @@ http check: NG
   
 この結果から、Nginx自体は起動しているが、myapp.service が停止しており、3000番ポートで待ち受けるプロセスが存在しないことが分かる。  
 
-自動復旧時  
+## 自動復旧時  
   
 rootのcronからスクリプトを実行し、myapp.service が停止していた場合に自動起動できることを確認した。  
   
@@ -111,7 +111,7 @@ http check: OK
   
 この結果から、myapp.service の停止を検知した後、systemctl start myapp によって自動復旧できたことが分かる。  
   
-実施手順  
+## 実施手順  
   
 最初に、手動でサービス状態・ポート状態・HTTP応答を確認した。  
   
@@ -139,7 +139,7 @@ myapp.service を自動起動した直後、`systemctl is-active myapp` では a
 詳細は以下に記録している。  
 - [監視スクリプトの学び](docs/monitoring_notes.md2)  
 
-学び  
+## 学び  
 
 サービスが active でも、Webサービスとして正常に応答しているとは限らない。  
 そのため、サービス状態・ポート状態・HTTP応答を分けて確認することで、どの層で問題が起きているかを判断しやすくなると学んだ。  
