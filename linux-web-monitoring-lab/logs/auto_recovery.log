@@ -1,1 +1,7 @@
-
+nginx: OK
+myapp: NG
+action: starting myapp
+myapp restart: OK
+port 80: OK
+port 3000: OK
+http check: OK
