@@ -1,0 +1,19 @@
+## 自動復旧テスト
+
+myapp.service を手動で停止し、監視スクリプトによって自動復旧できるかを確認した。
+
+```bash
+sudo systemctl stop myapp
+
+root権限のcronで check_web_stack.sh が実行され、myapp.service の停止を検知した。
+
+myapp: NG
+action: starting myapp
+myapp restart: OK
+
+その後、3000番ポートとHTTP応答も正常に戻った。
+
+port 3000: OK
+http check: OK
+
+この結果から、myapp.service が停止しても、監視スクリプトによって異常検知と自動復旧ができることを確認した。
