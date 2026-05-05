@@ -78,18 +78,18 @@ linux-web-monitoring-lab/
     ├── permission_denied_tmp.md
     └── monitoring_notes.md
 ```
-## 主なファイル
-- [監視・自動復旧スクリプト]()
-- [myapp.service]()
-- [Nginx設定ファイル]()
+## 主なフォルダ
+- [監視・自動復旧スクリプト](https://github.com/toki-linux/linux-practice-raw/tree/main/linux-monitoring-lab/scripts)
+- [myapp.service](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/configs/myapp.service)
+- [Nginx設定ファイル](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/configs/nginx-default.conf)
 ## 検証ログ
-- [正常時ログ]()
-- [myapp停止ログ]()
-- [自動復旧時ログ]()
+- [正常時ログ](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/logs/normal.log)
+- [myapp停止ログ](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/logs/myapp_down.log)
+- [自動復旧時ログ](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/logs/auto_recovery.log)
 ## 詳細ドキュメント
-- [自動復旧テスト]()
-- [/tmpログファイルのPermission denied]()
-- [監視スクリプトの学び]()
+- [自動復旧テスト](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/docs/auto_recovery_test.md)
+- [/tmpログファイルのPermission denied](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/docs/permission_denied_tmp.md)
+- [監視スクリプトの学び](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/docs/monitoring_notes.md)
 
 ## 検証結果  
 正常時  
