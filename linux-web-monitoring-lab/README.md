@@ -41,7 +41,7 @@ nginx.service が active か
 myapp.service が active か  
 80番ポートがLISTENしているか  
 3000番ポートがLISTENしているか  
-curl http://localhost/app/ が成功するか  
+`curl http://localhost/app/` が成功するか  
 ## 主な機能  
 サービス状態の確認  
 ポート状態の確認  
