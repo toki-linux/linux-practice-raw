@@ -37,29 +37,29 @@ check_web_stack.sh
 
 このスクリプトでは、以下を確認する。  
 
-nginx.service が active か  
-myapp.service が active か  
-80番ポートがLISTENしているか  
-3000番ポートがLISTENしているか  
-`curl http://localhost/app/` が成功するか  
+- nginx.service が active か  
+- myapp.service が active か  
+- 80番ポートがLISTENしているか  
+- 3000番ポートがLISTENしているか  
+- `curl http://localhost/app/` が成功するか  
 ## 主な機能  
-サービス状態の確認  
-ポート状態の確認  
-HTTP応答確認  
-ログ出力  
-myapp停止時の自動復旧  
-cronによる定期実行  
+- サービス状態の確認  
+- ポート状態の確認  
+- HTTP応答確認  
+- ログ出力  
+- myapp停止時の自動復旧  
+- cronによる定期実行  
 ## 使用技術・コマンド  
-Ubuntu  
-Nginx  
-Python http.server  
-systemd  
-cron  
-Bash  
-systemctl  
-ss  
-grep  
-curl  
+- Ubuntu  
+- Nginx  
+- Python http.server  
+- systemd  
+- cron  
+- Bash  
+- systemctl  
+- ss  
+- grep  
+- curl  
 ## ディレクトリ構成  
 ```txt
 linux-web-monitoring-lab/
@@ -149,4 +149,4 @@ myapp.service を自動起動した直後、`systemctl is-active myapp` では a
 サービスが active でも、Webサービスとして正常に応答しているとは限らない。  
 そのため、サービス状態・ポート状態・HTTP応答を分けて確認することで、どの層で問題が起きているかを判断しやすくなると学んだ。  
 また、cronを使うことで監視スクリプトを定期実行でき、root権限で実行することで停止したサービスの自動復旧もできることを確認した。 
-今回の検証を通じて、障害発生後に調査するだけでなく、異常を検知し、ログに記録し、復旧する運用の流れを体験できた。  
+今回の検証を通じて、障害発生後に調査するだけでなく、異常を検知し、ログに記録し、必要に応じて復旧する運用の流れを体験できた。  
