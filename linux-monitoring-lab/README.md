@@ -78,7 +78,7 @@ linux-web-monitoring-lab/
     ├── permission_denied_tmp.md
     └── monitoring_notes.md
 ```
-## 主なフォルダ
+## 主なファイル
 - [監視・自動復旧スクリプト](https://github.com/toki-linux/linux-practice-raw/tree/main/linux-monitoring-lab/scripts)
 - [myapp.service](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/configs/myapp.service)
 - [Nginx設定ファイル](https://github.com/toki-linux/linux-practice-raw/blob/main/linux-monitoring-lab/configs/nginx-default.conf)
