@@ -1,0 +1,5 @@
+nginx: OK
+myapp: NG
+port 80: OK
+port 3000: NG
+http check: NG
