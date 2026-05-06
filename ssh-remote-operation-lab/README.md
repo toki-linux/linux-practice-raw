@@ -18,7 +18,8 @@ SSHで接続する
 原因を切り分ける
   ↓
 正しい手順で解決する
-目的
+```
+## 目的
 
 このリポジトリでは、SSHを使った基本的なリモート操作を実践し、以下を理解することを目的としています。
 
@@ -161,15 +162,14 @@ ssh-remote-operation-lab/
 │   └── auth_log_sample.log
 └── notes/
     └── commands.md
-主なファイル
-SSH公開鍵認証
-scpによるファイル転送
-権限エラーの再現と解決
-SSHログ確認
-NAT環境とポートフォワーディング
-コマンドメモ
-使用コマンド
+## 主なドキュメント
 
+- [SSH公開鍵認証](docs/public_key_auth.md)
+- [scpによるファイル転送](docs/scp_file_transfer.md)
+- [scp転送時の権限エラー](docs/permission_error.md)
+- [SSHログ確認](docs/ssh_logs.md)
+- [NAT環境とポートフォワーディング](docs/nat_port_forwarding.md)
+- [コマンドメモ](notes/commands.md)
 この検証で使用する主なコマンドです。
 
 ssh
