@@ -65,7 +65,7 @@ Ubuntu VMの22番ポート
 ssh -p 2222 toki@localhost
 ```
 ## 学習・検証内容
-# 1. SSH公開鍵認証
+### 1. SSH公開鍵認証
 
 公開鍵認証を使って、接続元PCからUbuntuサーバへSSH接続できることを確認します。
 
@@ -81,7 +81,7 @@ ssh -p 2222 toki@localhost
 詳細：
 
 - [SSH公開鍵認証](docs/public_key_auth.md)
-# 2. scpによるファイル転送
+### 2. scpによるファイル転送
 
 scp を使って、接続元PCからUbuntuサーバへファイルを転送します。
 
