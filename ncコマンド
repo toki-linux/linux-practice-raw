@@ -1,0 +1,151 @@
+nc は一言でいうと、「そのポートまで通信が届くか」を確認する道具。
+
+SSHでいうと、ssh はログインまで試す。
+nc はログインはしない。入口のポートまで届くかだけ見る。
+
+
+
+使い分け
+1. ポートまで届くか見る
+nc -vz localhost 2222
+
+成功したら、
+
+Connection succeeded
+
+みたいに出る。
+
+これは、
+
+少なくとも、そのポートまでは届いている
+
+という意味。
+
+2. SSHログインできるか見る
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+
+これは、ポート到達だけでなく、
+
+SSHとして会話できるか
+ユーザー名が正しいか
+秘密鍵が正しいか
+authorized_keysが合っているか
+
+まで見る。
+
+こう考えると分かりやすい
+nc
+→ 玄関のチャイムが鳴るか確認するだけ
+
+ssh
+→ 玄関を開けてもらって、中に入るところまで確認する
+
+今回なら、
+
+nc -vz localhost 2222
+
+で成功したら、
+
+Mac → localhost:2222 → VirtualBox → Ubuntu:22
+
+までは届いている可能性が高い。
+
+そのうえでSSHに失敗するなら、次に疑うのは、
+
+ユーザー名
+秘密鍵
+authorized_keys
+.sshの権限
+sshd_config
+
+になる。
+
+実務っぽい切り分け
+
+SSHできない時に、いきなり鍵を疑うのではなく、順番に見る。
+
+1. Ubuntu側でsshdが動いているか
+sudo systemctl status ssh
+2. Ubuntu側で22番を待ち受けているか
+ss -tulnp | grep ':22'
+3. Mac側から2222番に届くか
+nc -vz localhost 2222
+4. SSHとしてログインできるか
+ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
+
+こうすると、原因を分けられる。
+
+結果の読み方
+成功
+Connection to localhost port 2222 succeeded!
+
+意味。
+
+そのポートまでは届いている
+
+ただし、これはログイン成功ではない。
+SSH認証が成功したわけではない。
+
+失敗
+Connection refused
+
+意味。
+
+そこに接続は届いたが、待ち受けているサービスがいない
+
+可能性は、
+
+ポートフォワーディングがない
+sshdが止まっている
+指定ポートが違う
+
+など。
+
+タイムアウト
+Operation timed out
+
+意味。
+
+そもそも届いていない可能性が高い
+
+可能性は、
+
+IPが違う
+ネットワーク経路が違う
+ファイアウォールで落ちている
+NAT/ブリッジ設定が違う
+
+など。
+
+今回のログの意味
+
+あなたの結果はこれ。
+
+nc: connectx to localhost port 2222 (tcp) failed: Connection refused
+Connection to localhost port 2222 [tcp/rockwell-csp2] succeeded!
+
+これはたぶん、
+
+IPv6側 localhost は失敗
+IPv4側 localhost は成功
+
+という動き。
+
+だから最終的には、
+
+localhost:2222 には届いている
+
+と見てOK。
+
+そしてUbuntu側に、
+
+kex_exchange_identification: Connection closed by remote host
+
+が出たのは、nc がSSHログインせず、接続確認だけして閉じたから。
+
+まとめ
+
+nc の使い所はこれ。
+
+「ログインできるか」ではなく、
+「そのポートまで届くか」を確認したい時に使う。
