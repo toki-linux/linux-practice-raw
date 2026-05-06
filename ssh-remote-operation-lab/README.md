@@ -22,15 +22,16 @@ SSHで接続する
 ## 目的
 
 このリポジトリでは、SSHを使った基本的なリモート操作を実践し、以下を理解することを目的としています。
-```txt
-SSHでリモート環境へ接続できる
-公開鍵認証の流れを理解する
-scp でファイル転送できる
-権限が必要な場所へ直接転送できない理由を理解する
-SSH接続の成功・失敗をログから確認できる
-NAT環境下でのポートフォワーディングの考え方を整理する
-```
+
+- SSHでリモート環境へ接続できる
+- 公開鍵認証の流れを理解する
+- scp でファイル転送できる
+- 権限が必要な場所へ直接転送できない理由を理解する
+- SSH接続の成功・失敗をログから確認できる
+- NAT環境下でのポートフォワーディングの考え方を整理する
+
 ## 検証環境
+```txt
 項目	内容
 接続元	Mac
 接続先	Ubuntu Server
@@ -38,12 +39,13 @@ NAT環境下でのポートフォワーディングの考え方を整理する
 ネットワーク	NAT / ポートフォワーディング
 SSHポート	VM側: 22 / ホスト側: 2222
 認証方式	公開鍵認証
-
+```
 
 
 ## 構成イメージ
-```txt
+
 接続元PC
+```txt
 Windows / Mac
     ↓ SSH
 Host localhost:2222
@@ -68,32 +70,32 @@ ssh -p 2222 toki@localhost
 公開鍵認証を使って、接続元PCからUbuntuサーバへSSH接続できることを確認します。
 
 記録する内容：
-```txt
-鍵の作成
-公開鍵の配置
-authorized_keys の確認
-known_hosts に登録される流れ
-.ssh ディレクトリと鍵ファイルの権限
-SSH接続コマンド
-```
+
+- 鍵の作成
+- 公開鍵の配置
+- authorized_keys の確認
+- known_hosts に登録される流れ
+- .ssh ディレクトリと鍵ファイルの権限
+- SSH接続コマンド
+
 詳細：
 
-- [SSH公開鍵認証](https://github.com/toki-linux/linux-practice-raw/blob/main/ssh-remote-operation-lab/docs/public_key_auth.md)
+- [SSH公開鍵認証](docs/public_key_auth.md)
 2. scpによるファイル転送
 
 scp を使って、接続元PCからUbuntuサーバへファイルを転送します。
 
 記録する内容：
-```txt
-転送元
-転送先
-使用したコマンド
-転送後の確認
-転送に失敗した場合の原因
-```
+
+- 転送元
+- 転送先
+- 使用したコマンド
+- 転送後の確認
+- 転送に失敗した場合の原因
+
 詳細：
 
-- [scpによるファイル転送](https://github.com/toki-linux/linux-practice-raw/blob/main/ssh-remote-operation-lab/docs/scp_file_transfer.md)
+- [scpによるファイル転送](docs/scp_file_transfer.md)
 3. 権限エラーの再現と解決
 
 一般ユーザーで、権限が必要なディレクトリへ直接ファイル転送しようとして失敗するケースを再現します。
@@ -110,7 +112,7 @@ scp index.html toki@server:/home/toki/
 sudo mv /home/toki/index.html /var/www/html/
 ```
 詳細：
-- [権限エラーの再現と解決](https://github.com/toki-linux/linux-practice-raw/blob/main/ssh-remote-operation-lab/docs/permission_error.md)
+- [権限エラーの再現と解決](docs/permission_error.md)
 
 4. SSHログ確認
 
@@ -125,29 +127,29 @@ sudo journalctl -u ssh
 sudo tail -n 50 /var/log/auth.log
 ```
 記録する内容：
-```txt
-SSH接続成功時のログ
-SSH接続失敗時のログ
-接続元IP
-接続ユーザー
-認証方式
-```
+
+- SSH接続成功時のログ
+- SSH接続失敗時のログ
+- 接続元IP
+- 接続ユーザー
+- 認証方式
+
 詳細：
-- [SSHログ確認](https://github.com/toki-linux/linux-practice-raw/blob/main/ssh-remote-operation-lab/docs/ssh_logs.md)
+- [SSHログ確認](docs/ssh_logs.md)
 5. NAT環境とポートフォワーディング
 
 VirtualBoxのNAT環境では、VMへ直接SSH接続できないため、ポートフォワーディングを設定して接続します。
 
 記録する内容：
-```txt
-NAT環境で直接接続できない理由
-ホスト側ポートとゲスト側ポートの対応
-VirtualBoxの設定内容
-実際のSSH接続コマンド
-接続できない時の切り分け
-```
+
+- NAT環境で直接接続できない理由
+- ホスト側ポートとゲスト側ポートの対応
+- VirtualBoxの設定内容
+- 実際のSSH接続コマンド
+- 接続できない時の切り分け
+
 詳細：
-- [NAT環境とポートフォワーディング](https://github.com/toki-linux/linux-practice-raw/blob/main/ssh-remote-operation-lab/docs/nat_port_forwarding.md)
+- [NAT環境とポートフォワーディング](docs/nat_port_forwarding.md)
 ## ディレクトリ構成
 
 ```text
@@ -214,20 +216,20 @@ sudo journalctl -u ssh
 ## 学び
 
 この検証を通じて、SSH接続は単にコマンドを実行するだけでなく、以下の複数の要素が関係していることを整理します。
-```txt
-SSHサービスが起動していること
-接続先ポートが開いていること
-NAT環境ではポートフォワーディングが必要になること
-公開鍵と秘密鍵の対応が正しいこと
-.ssh 配下の権限が適切であること
-接続できない場合はログから原因を確認すること
-```
+
+- SSHサービスが起動していること
+- 接続先ポートが開いていること
+- NAT環境ではポートフォワーディングが必要になること
+- 公開鍵と秘密鍵の対応が正しいこと
+- .ssh 配下の権限が適切であること
+- 接続できない場合はログから原因を確認すること
+
 また、scp によるファイル転送では、転送先の権限が接続ユーザーに依存するため、権限が必要な場所へは一度ホームディレクトリに転送してから sudo で移動する流れを確認します。
 
 ## 今後の改善案
-パスワード認証と公開鍵認証の違いを比較する
-SSH接続失敗パターンを複数作る
-Permission denied (publickey) の原因を整理する
-known_hosts の警告を再現して解決する
-sshd_config の設定変更を検証する
-ファイル転送後にNginxで表示確認する
+- パスワード認証と公開鍵認証の違いを比較する
+- SSH接続失敗パターンを複数作る
+- Permission denied (publickey) の原因を整理する
+- known_hosts の警告を再現して解決する
+- sshd_config の設定変更を検証する
+- ファイル転送後にNginxで表示確認する
