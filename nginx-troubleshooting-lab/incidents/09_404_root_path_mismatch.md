@@ -17,187 +17,310 @@ Nginxで `index.html` にアクセスしたところ、`404 Not Found` が発生
 ```bash
 curl http://localhost/
 ```
+
+---
+
 ## 期待される状態
 
-index.html の内容が表示されること。
+`index.html` の内容が表示されること。
+
+---
 
 ## 実際の状態
 
-404 Not Found が返ってきた。
+`404 Not Found` が返ってきた。
+
+---
 
 ## 原因候補
 
 考えられる原因は以下。
 
-- index.html が存在しない
-- Nginxの root 設定が間違っている
+- `index.html` が存在しない
+- Nginxの `root` 設定が間違っている
 - URLと実際のファイル配置が一致していない
 - Nginxが想定とは別のディレクトリを探している
 - 設定変更後にNginxをreloadしていない
+
+---
+
 ## 確認したログ・コマンド
+
 ### 1. Nginx経由でアクセスする
+
 ```bash
 curl http://localhost/
 ```
+
 確認結果。
-```txt
+
+```text
 404 Not Found
 ```
-/ にアクセスすると404が返った。
+
+`/` にアクセスすると404が返った。
+
+---
 
 ### 2. access.logで404を確認する
+
 ```bash
 sudo tail -n 20 /var/log/nginx/access.log
 ```
+
 確認結果の例。
-```txt
+
+```text
 "GET / HTTP/1.1" 404
 ```
+
 リクエストはNginxまで届いており、Nginxが404を返していることを確認した。
 
+---
+
 ### 3. Nginx設定ファイルのrootを確認する
+
 ```bash
 grep -n "root" /etc/nginx/sites-enabled/default
 ```
+
 確認結果の例。
-```txt
+
+```nginx
 root /var/www/test;
 ```
-Nginxの root が /var/www/test になっていた。
+
+Nginxの `root` が `/var/www/test` になっていた。
+
+---
 
 ### 4. 実際のファイル配置を確認する
+
 ```bash
 ls -l /var/www/html/index.html
 ls -l /var/www/test/index.html
 ```
+
 確認結果の例。
-```txt
+
+```text
 /var/www/html/index.html      は存在する
 /var/www/test/index.html      は存在しない
 ```
-実際には /var/www/html/index.html が存在していた。
 
-しかし、Nginxは root /var/www/test; の設定により、/var/www/test/index.html を探していた。
+実際には `/var/www/html/index.html` が存在していた。
+
+しかし、Nginxは `root /var/www/test;` の設定により、`/var/www/test/index.html` を探していた。
+
+---
 
 ## 切り分け
 
-access.log に404が記録されていたため、リクエストはNginxまで届いていると判断した。
+`access.log` に404が記録されていたため、リクエストはNginxまで届いていると判断した。
 
-次に、実際のファイル配置を確認したところ、/var/www/html/index.html は存在していた。
+次に、実際のファイル配置を確認したところ、`/var/www/html/index.html` は存在していた。
 
-しかし、Nginx設定ファイルを確認すると、root が以下のようになっていた。
-```bash
+しかし、Nginx設定ファイルを確認すると、`root` が以下のようになっていた。
+
+```nginx
 root /var/www/test;
 ```
-この設定の場合、Nginxは / へのアクセスに対して以下のファイルを探す。
-```bash
+
+この設定の場合、Nginxは `/` へのアクセスに対して以下のファイルを探す。
+
+```text
 /var/www/test/index.html
 ```
+
 一方で、実際に存在していたファイルは以下だった。
-```bash
+
+```text
 /var/www/html/index.html
 ```
-このことから、ファイル自体が存在しないのではなく、Nginxの root 設定と実際のファイル配置が一致していないことが原因だと判断した。
+
+このことから、ファイル自体が存在しないのではなく、Nginxの `root` 設定と実際のファイル配置が一致していないことが原因だと判断した。
+
+---
 
 ## 原因
 
-Nginxの root 設定が、実際のファイル配置と一致していなかった。
+Nginxの `root` 設定が、実際のファイル配置と一致していなかった。
 
 実際のファイル配置。
-```bash
+
+```text
 /var/www/html/index.html
 ```
+
 誤っていたNginx設定。
-```bash
+
+```nginx
 root /var/www/test;
 ```
+
 この場合、Nginxは以下を探す。
-```bash
+
+```text
 /var/www/test/index.html
 ```
-その場所に index.html が存在しないため、404 Not Found になった。
+
+その場所に `index.html` が存在しないため、`404 Not Found` になった。
+
+---
 
 ## 解決
 
-Nginx設定ファイルの root を、実際にファイルが存在するパスに修正する。
+Nginx設定ファイルの `root` を、実際にファイルが存在するパスに修正する。
+
 ```bash
 sudo nano /etc/nginx/sites-enabled/default
 ```
+
 修正前。
-```bash
+
+```nginx
 root /var/www/test;
 ```
+
 修正後。
-```bash
+
+```nginx
 root /var/www/html;
 ```
+
 Nginx設定ファイルの構文を確認する。
+
 ```bash
 sudo nginx -t
 ```
+
 設定を反映する。
+
 ```bash
 sudo systemctl reload nginx
 ```
+
+---
+
 ## 解決後の確認
 
 再度アクセスする。
+
 ```bash
 curl http://localhost/
 ```
-index.html の内容が返れば解決。
+
+`index.html` の内容が返れば解決。
+
+---
 
 ## 再現手順
 
-Nginx設定ファイルの root を、実際のファイル配置と違う場所に変更する。
+Nginx設定ファイルの `root` を、実際のファイル配置と違う場所に変更する。
 
 例：
-```bash
+
+```nginx
 root /var/www/test;
 ```
+
 設定変更後、Nginxを再読み込みする。
+
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
 その後、以下にアクセスする。
+
 ```bash
 curl http://localhost/
 ```
-/var/www/test/index.html が存在しない場合、404が返る。
+
+`/var/www/test/index.html` が存在しない場合、404が返る。
+
+---
 
 ## 学び
 
-- 404 Not Found は、単にファイルが存在しない場合だけでなく、Nginxが探している場所と実際のファイル配置がズレている場合にも発生する。
+`404 Not Found` は、単にファイルが存在しない場合だけでなく、Nginxが探している場所と実際のファイル配置がズレている場合にも発生する。
 
-- 今回の場合、index.html は存在していたが、Nginxの root が別のディレクトリを指していたため、Nginxは存在しない /var/www/test/index.html を探していた。
+今回の場合、`index.html` は存在していたが、Nginxの `root` が別のディレクトリを指していたため、Nginxは存在しない `/var/www/test/index.html` を探していた。
 
 そのため、404が出た場合は、ファイルの有無だけでなく、以下をセットで確認することが重要だと分かった。
-```txt
+
+```text
 1. アクセスしたURL
 2. Nginxのlocation設定
 3. Nginxのroot設定
 4. Nginxが実際に探すファイルパス
 5. 実際のファイル配置
 ```
+
+---
+
 ## root設定の考え方
 
-root は、リクエストされたURLのパスを、指定したディレクトリの後ろにつなげてファイルを探す。
+`root` は、リクエストされたURLのパスを、指定したディレクトリの後ろにつなげてファイルを探す。
 
 例：
-```txt
+
+```nginx
 root /var/www/html;
+```
 
-この状態で /index.html にアクセスすると、Nginxは以下を探す。
+この状態で `/index.html` にアクセスすると、Nginxは以下を探す。
 
+```text
 /var/www/html/index.html
+```
 
-一方で、root が以下のように間違っていると、
+一方で、`root` が以下のように間違っていると、
 
+```nginx
 root /var/www/test;
+```
 
 Nginxは以下を探す。
 
+```text
 /var/www/test/index.html
 ```
-このように、root の指定先がズレると、実際にはファイルが存在していてもNginxからは見つけられず、404になる。
+
+このように、`root` の指定先がズレると、実際にはファイルが存在していてもNginxからは見つけられず、404になる。
+
+---
+
+## alias設定ミスとの違い
+
+`root` と `alias` はどちらもファイルパスに関係するが、動き方が違う。
+
+```text
+root
+→ rootで指定したパスの後ろに、リクエストURIを足して探す
+
+alias
+→ locationで一致した部分を、aliasで指定したパスに置き換えて探す
+```
+
+今回のエラーは、`root` の起点ディレクトリが間違っていたパターン。
+
+一方で、`alias` の末尾 `/` ミスでは、パスの結合がズレて `/var/www/imgtest.html` のような不自然なパスを探すことがある。
+
+---
+
+## 403との違い
+
+`404 Not Found` は、Nginxが探した場所にファイルが存在しない場合に発生する。
+
+一方で、`403 Forbidden` は、ファイルやディレクトリには到達できているが、権限不足や一覧表示禁止などでアクセスできない場合に発生する。
+
+```text
+404 Not Found
+→ 探した場所にファイルがない
+
+403 Forbidden
+→ ファイルやディレクトリには到達できたが、アクセスや表示が許可されていない
+```
+
+今回のケースでは、Nginxが `/var/www/test/index.html` を探したが、その場所にファイルが存在しなかったため404になった。
