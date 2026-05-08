@@ -1,0 +1,17 @@
+status=203/EXEC
+→ ExecStartに書いたコマンドを実行できない
+→ コマンドのパス、綴り、実行権限を疑う
+
+status=200/CHDIR
+→ WorkingDirectoryに移動できない
+→ 指定したディレクトリが存在するかを疑う
+
+alias
+→ locationで一致したURL部分を、指定したパスに置き換える
+
+root
+→ rootで指定したパスの後ろに、リクエストURIを付け足す
+
+
+
+
