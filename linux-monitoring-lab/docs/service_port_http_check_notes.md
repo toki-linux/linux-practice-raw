@@ -6,7 +6,6 @@
 activeでなければ0以外を返す。
 
 そのため、if文でサービス状態を判定できる。
-
 if systemctl is-active --quiet myapp
 then
     echo "myapp: OK"
