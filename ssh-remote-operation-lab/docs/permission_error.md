@@ -46,7 +46,7 @@ echo "permission test" > test.html
 ls -l test.html
 cat test.html
 ```
-2. `/var/www/html/ `へ直接転送して失敗を確認する
+### 2. `/var/www/html/ `へ直接転送して失敗を確認する
 
 接続元PCから、`/var/www/html/ `へ直接転送する。
 ```bash
@@ -59,22 +59,22 @@ scp: /var/www/html/test.html: Permission denied
 ```
 この結果から、SSH接続と鍵認証は成功しているが、転送先である `/var/www/html/ `に toki ユーザーで書き込む権限がないため、ファイル転送に失敗したことが分かる。
 
-3. 一度ホームディレクトリへ転送する
+### 3. 一度ホームディレクトリへ転送する
 
 権限が必要な場所へ直接転送できないため、一度 toki ユーザーのホームディレクトリへ転送する。
 ```bash
 scp -P 2222 -i ~/.ssh/my_test_key ~/test.html toki@localhost:~
 ```
-4. UbuntuサーバへSSH接続する
+### 4. UbuntuサーバへSSH接続する
 ```bash
 ssh -p 2222 -i ~/.ssh/my_test_key toki@localhost
 ```
-6. ホームディレクトリに転送されたことを確認する
+### 5. ホームディレクトリに転送されたことを確認する
 ```bash
 ls -l ~/test.html
 cat ~/test.html
 ```
-7. `sudo` を使って `/var/www/html/` へ移動する
+### 6. `sudo` を使って `/var/www/html/` へ移動する
 
 `/var/www/html/` は一般ユーザーでは書き込めないため、サーバ側で `sudo `を使ってファイルを移動する。
 ```bash
@@ -84,7 +84,7 @@ sudo mv ~/test.html /var/www/html/
 ```bash
 ls -l /var/www/html/test.html
 ```
-7. ブラウザまたは `curl` で表示確認する
+### 7. ブラウザまたは `curl` で表示確認する
 
 Nginxが起動している状態で、HTTP応答を確認する。
 ```bash
