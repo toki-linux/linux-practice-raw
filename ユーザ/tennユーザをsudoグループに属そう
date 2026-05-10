@@ -1,17 +1,20 @@
 ユーザtennをsudoグループに属させsudoコマンドを使えるようにする
 
-手順
+## 手順
 tennの所属グループ確認
 id tenn
+
 sudoグループにtennを追加
 sudo usermod -aG sudo tenn
+
 追加できたか確認
 su - tenn
 id tenn
+
 sudoグループが表示されれば良い。
 cat /etc/group | grep sudo でも良い。
 
-注意点
+## 注意点
 sudoグループにtennを追加
 sudo usermod -aG sudo tenn
 これを行うときはsudoコマンドが使えるユーザでやる。今回はtokiユーザでやった。
