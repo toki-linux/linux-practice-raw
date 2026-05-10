@@ -5,9 +5,10 @@ ssh -p 2222 -i ~/.ssh/tenn_key tenn@localhost
 省略した形
 ssh tennkiti 
 
-手順
+## 手順
 ~/.ssh/configを編集できる状態で開く
 sudo nano ~/.ssh/config
+
 中身はこう
 Host tennkiti
   HostName localhost
@@ -15,9 +16,10 @@ Host tennkiti
   Port 2222
   IdentityFIle ~/.ssh/tenn_key
 保存して終了
+
 ssh tennkitiで接続できるか確認
 接続できた
 
 
-SSH接続する際に~/.ssh/configファイルを見にいくプログラムが設定されているのでこれが成り立つ
+## SSH接続する際に~/.ssh/configファイルを見にいくプログラムが設定されているのでこれが成り立つ
 ~/.ssh/configファイルはショートカット設定ファイルと思っていれば良い
