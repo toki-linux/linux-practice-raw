@@ -1,12 +1,14 @@
 新たに鍵を作ってtennユーザのホームディレクトリに直接飛べるようにする
 
 前提としてサーバ側の公開鍵はクライアントのknown_hostsに登録済み
-手順
+## 手順
 まずクライアント側で鍵作成
 ssh-keygen -t ed25519 -f ~/.ssh/tenn_key
 暗号方式はed25519で名前はtenn_keyで、おく場所は~/.ssh
+
 scpコマンドを使って、tenn_key.pubをサーバ側のホームディレクトリに送る
 scp -P 2222 ~/.ssh/tenn_key.pub tenn@localhost:~
+
 一度パスワード認証でサーバにSSH接続をし、~/.sshの権限やauthorized_keysの権限確認
 ssh -p 2222 tenn@localhost
 tenn@ubuntu-toki:~$ ls -ld .ssh
@@ -14,6 +16,7 @@ drwxrwxr-x 2 tenn tenn 4096 May 10 15:49 .ssh
 tenn@ubuntu-toki:~$ ls -l .ssh
 total 0
 -rw-rw-r-- 1 tenn tenn 0 May 10 15:49 authorized_keys
+
 権限の変更
 tenn@ubuntu-toki:~$ chmod 600 ~/.ssh/authorized_keys
 tenn@ubuntu-toki:~$ ls -l .ssh
@@ -22,16 +25,19 @@ total 0
 tenn@ubuntu-toki:~$ chmod 700 ~/.ssh
 tenn@ubuntu-toki:~$ ls -ld .ssh
 drwx------ 2 tenn tenn 4096 May 10 15:49 .ssh
+
 ボームディレクトリにある公開鍵をauthorized_keysに入れる。
 cp ~/tenn_key.pub ~/.ssh/authorized_keys
+
 一旦接続終了
 exit
+
 SSH接続の準備完了したのでやってみる
 ssh -p 2222 -i ~/.ssh/tenn_key tenn@localhost
 パスワードなしで繋がれば成功
 
 
-注意点
+## 注意点
 scpでポート指定するときは大文字のP
 なぜホームディレクトリに送るかというと、~/.ssh/authorized_keysにscpコマンドの権限では送れない場合があるため
 authorized_keysの所有者はrootでなくていいの？
