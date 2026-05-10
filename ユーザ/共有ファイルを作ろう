@@ -1,0 +1,35 @@
+/srv配下にgroup-shareディレクトリを作成しその中に、test.txtファイルを作成する
+test.txtファイルの権限は660とし、所有者はroot、グループはstudyで行う
+
+手順
+/srv配下にgroup-shareディレクトリを作成する
+mkdir /srv/group-share 
+group-shareディレクトリの権限確認
+ls -l /srv
+toki@ubuntu-toki:~$ sudo ls -l /srv
+total 4
+drwxr-xr-x 2 root root 4096 May 10 11:56 group-share
+権限とグループの変更
+sudo 770 /svr/group-share 
+sudo chgrp study /srv/group-share
+ファイルを作成する
+ちなみに/srvディレクトリの権限は所有者、グループともにrootで766である
+touch /srv/group-share/test.txt
+何か書き込んでおく
+echo "hello tenn" /srv/group-share/test.txt
+test.txtの権限確認
+ls -l /srv/group-share/test.txt
+toki@ubuntu-toki:~$ ls -l /srv/group-share/test.txt
+-rw-rw-r-- 1 toki toki 0 May 10 13:10 /srv/group-share/test.txt
+test.txtの権限変更
+chmod 660 /srv/group-share/test.txt
+chgrp study /srv/group-share/test.txt
+
+注意点
+ファイルだけでなくディレクトリの権限もチェック
+ディレクトリなら実行権、ファイルを編集するならみる権限と書き込む権限が必要
+
+
+
+
+
