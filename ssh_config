@@ -1,0 +1,22 @@
+sshで接続する時にコマンドを省略して送れるようにする
+
+手順
+クライアント側の.sshディレクトリにconfigファイルがあるか確認
+なければ作成。ここに省略した名前と元の情報を紐つけたやつを書く
+中身はこんな感じ
+Host myserver
+  HostName localhost
+  User toki
+  Port 2222
+  IdentityFile ~/.ssh/id_rsa
+
+  本来の形
+ssh -p 2222 -i ~/.ssh/id_rsa toki@localhost
+  
+Host 省略名
+　HostName サーバ名
+　User ユーザ名
+　Port ポート番号
+　IdentityFile どの秘密鍵を使うか
+
+ 
