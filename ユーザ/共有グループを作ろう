@@ -1,0 +1,17 @@
+tennとtokiが属する共有グループstudyを作る
+
+手順
+グループを作る
+sudo groupadd study
+作れているか確認
+sudo cat /etc/group | grep study
+ユーザtennとtokiをstudyグループに入れる
+sudo usermod -aG study tenn
+sudo usermod -aG study toki
+グループに属したか確認
+id tenn
+id toki
+sudo cat /etc/group | grep study
+
+注意点
+usermodコマンドでグループ追加を行う際に-aを忘れてしまうと上書きされ、今属しているグループが消えるので、追記の意味を持つ-aを使う
