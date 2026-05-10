@@ -1,12 +1,14 @@
 tennという新しいユーザを作る
 
-手順
+## 手順
 ユーザを作る
 useradd tenn
+
 確認する
 sudo cat /etc/passwd | grep tenn
+
 tennユーザがあれば完成
 
-注意点
+## 注意点
 useraddでユーザを作成する際、オプションで何も指定しなければ、/etc/default/useraddの設定に従って作成される。
 
