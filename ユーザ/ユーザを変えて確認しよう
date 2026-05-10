@@ -1,17 +1,20 @@
 tennユーザに切り替わりtest.txtファイルが見えるかの確認とtennユーザ側からtest.txtファイルに書き込みtokiユーザが見えるかの確認
 
-手順
+## 手順
 tokiからtennに切り替わる
 su - tenn
+
 test.txtファイルが見えるか確認
 cat /srv/group-share/test.txt
 見えた
+
 次はtennがtest.txtファイルをへんしゅう
 echo "ohayou toki" >> /srv/group-share/test.txt 
+
 tokiに戻ってファイルの中身が編集されているか確認
 su - toki
 cat /srv/group-share/test.txt
 反映されていた
 
-注意点
+## 注意点
 tennでファイルを編集するときは>> を使い追記するようにする
