@@ -1,0 +1,41 @@
+ssh-keygen -t ed25519 -f ~/.ssh/tenn_key
+
+意味はこう。
+
+-t ed25519
+→ 鍵の種類を ed25519 にする
+
+-f ~/.ssh/tenn_key
+→ 秘密鍵の保存先・ファイル名を ~/.ssh/tenn_key にする
+
+実行すると、基本的に2つできる。
+
+~/.ssh/tenn_key
+→ 秘密鍵。絶対に他人に見せない
+
+~/.ssh/tenn_key.pub
+→ 公開鍵。サーバ側の authorized_keys に登録する
+
+なので、tenn 用の鍵名を tenn_key にしたいなら、そのコマンドでOK。
+
+注意点は、今どの端末・どのユーザーで作っているか。
+
+たとえばホストPC側から tenn としてUbuntuにSSH接続したいなら、鍵は基本的に接続元のPC側で作る。
+
+流れはこう。
+
+接続元PCで鍵を作る
+↓
+公開鍵 tenn_key.pub をUbuntu側の /home/tenn/.ssh/authorized_keys に登録する
+↓
+接続元PCから秘密鍵 tenn_key を指定してSSH接続する
+
+接続コマンドはこんな感じ。
+
+ssh -i ~/.ssh/tenn_key tenn@接続先
+
+VirtualBoxのNATポートフォワーディングで、ホストの 2223 をゲストの 22 に飛ばしているなら、
+
+ssh -p 2223 -i ~/.ssh/tenn_key tenn@localhost
+
+になる。
