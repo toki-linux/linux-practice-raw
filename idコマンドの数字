@@ -162,7 +162,7 @@ ls -n /srv/group-share/test.txt
 
 ls -l では名前表示、ls -n では数字表示。
 
-まとめ
+## まとめ
 
 id コマンドの数字はこれ。
 
