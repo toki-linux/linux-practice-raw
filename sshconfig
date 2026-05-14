@@ -1,0 +1,94 @@
+~/.ssh/config に省略名などを設定すると接続時に省略名で接続できるのってSSH接続を行う際に、プログラムでそこを見にいくようになっているからだよね？
+
+そう。その理解で合ってる。
+
+ssh コマンドを実行すると、SSHクライアントプログラムが 設定ファイルを読みにいく。
+その中に Host の設定があれば、省略名を本当の接続情報に置き換えてくれる。
+
+たとえば ~/.ssh/config にこう書く。
+
+Host tenn-vm
+    HostName localhost
+    User tenn
+    Port 2223
+    IdentityFile ~/.ssh/tenn_key
+
+すると、これだけで接続できる。
+
+ssh tenn-vm
+
+これは内部的には、ほぼこう書いたのと同じ。
+
+ssh -p 2223 -i ~/.ssh/tenn_key tenn@localhost
+何が起きているか
+
+流れはこう。
+
+ssh tenn-vm
+↓
+sshクライアントが ~/.ssh/config を読む
+↓
+Host tenn-vm の設定を探す
+↓
+HostName / User / Port / IdentityFile を取得する
+↓
+実際の接続先として使う
+
+つまり、tenn-vm という名前で通信しているわけではなく、
+tenn-vm という設定名を見つけて、そこに書かれた本当の接続先へ接続している。
+
+Host と HostName の違い
+
+ここ大事。
+
+Host tenn-vm
+    HostName localhost
+
+この場合、
+
+Host tenn-vm
+→ 自分がsshコマンドで使う省略名
+
+HostName localhost
+→ 実際に接続する相手のアドレス
+
+だから、
+
+ssh tenn-vm
+
+と打つと、実際には localhost に接続しにいく。
+
+なぜ便利なのか
+
+毎回これを書くのは面倒。
+
+ssh -p 2223 -i ~/.ssh/tenn_key tenn@localhost
+
+でも ~/.ssh/config に書いておけば、
+
+ssh tenn-vm
+
+だけで済む。
+
+特に実務では接続先が増えるから、
+
+本番サーバ
+検証サーバ
+踏み台サーバ
+開発用VM
+別ユーザー用SSH
+
+みたいな設定を ~/.ssh/config にまとめておくことが多い。
+
+まとめ
+
+今回の理解はこれでOK。
+
+ssh接続時、sshクライアントは ~/.ssh/config を読みにいく。
+そこに Host の設定があれば、省略名から実際の接続情報を取り出して接続する。
+
+なので ~/.ssh/config は、ざっくり言うと、
+
+SSH接続のショートカット設定ファイル
+
+と思えばいい。
