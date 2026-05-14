@@ -1,0 +1,50 @@
+サーバ側のauthorized_keysの権限を600にしたのだけど所有者ってrootにするんだっけ？ログインするユーザでいいんだっけ？
+
+ログインするユーザーでOK。
+今回なら、tenn でSSHログインしたいので、所有者は tenn にする。
+
+sudo chown tenn:tenn /home/tenn/.ssh/authorized_keys
+sudo chmod 600 /home/tenn/.ssh/authorized_keys
+
+さらに .ssh ディレクトリも大事。
+
+sudo chown -R tenn:tenn /home/tenn/.ssh
+sudo chmod 700 /home/tenn/.ssh
+sudo chmod 600 /home/tenn/.ssh/authorized_keys
+なぜ root ではなく tenn なのか
+
+SSHログイン時、sshd はこう見る。
+
+tenn としてログインしたい
+↓
+/home/tenn/.ssh/authorized_keys を見る
+↓
+そこに接続元の公開鍵が登録されているか確認する
+
+なので、authorized_keys は基本的に そのログイン対象ユーザーが所有しているファイル にする。
+
+今回ならこれが自然。
+
+/home/tenn/.ssh                  所有者: tenn
+/home/tenn/.ssh/authorized_keys  所有者: tenn
+確認コマンド
+ls -ld /home/tenn /home/tenn/.ssh
+ls -l /home/tenn/.ssh/authorized_keys
+
+期待する形はだいたいこう。
+
+drwxr-x---  ... tenn tenn /home/tenn
+drwx------  ... tenn tenn /home/tenn/.ssh
+-rw-------  ... tenn tenn /home/tenn/.ssh/authorized_keys
+
+/home/tenn は環境によって 755 や 750 などありえるけど、.ssh は 700、authorized_keys は 600 が基本。
+
+まとめ
+
+今回の正解はこれ。
+
+sudo chown -R tenn:tenn /home/tenn/.ssh
+sudo chmod 700 /home/tenn/.ssh
+sudo chmod 600 /home/tenn/.ssh/authorized_keys
+
+authorized_keys を root 所有にするより、ログインするユーザー本人の所有にする と覚えてOK。
