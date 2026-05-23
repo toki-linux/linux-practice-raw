@@ -1,1 +1,23 @@
+lsblkに出ない
+→ そもそもOSがディスクを認識していない
+→ EBSのアタッチ、AZ、インスタンスを確認
 
+lsblkに出るがdf -hに出ない
+→ ディスクはあるがマウントされていない
+→ mountが必要
+
+mountすると「wrong fs type」
+→ ファイルシステムがない、または種類が違う
+→ 新規EBSならmkfsが必要
+
+/data/test.txt がない
+→ /dataが追加EBSにマウントされていない可能性
+→ lsblk, df -hで確認
+
+再起動後に/dataが消える
+→ 手動マウントだけでfstab未設定
+→ /etc/fstabに追記
+
+再起動後にSSHできない
+→ fstabミスでemergency modeの可能性
+→ システムログ確認
